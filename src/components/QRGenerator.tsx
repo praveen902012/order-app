@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Download, QrCode } from 'lucide-react';
 import { generateQRCode } from '../lib/qr-utils';
-import { supabase } from '../lib/supabase';
+import { ApiService } from '../services/api';
 import { Table } from '../types/database';
 
 export const QRGenerator: React.FC = () => {
@@ -16,13 +16,8 @@ export const QRGenerator: React.FC = () => {
 
   const loadTables = async () => {
     try {
-      const { data, error } = await supabase
-        .from('tables')
-        .select('*')
-        .order('table_number');
-      
-      if (error) throw error;
-      setTables(data);
+      const tables = await ApiService.getAllTables();
+      setTables(tables);
     } catch (error) {
       console.error('Failed to load tables:', error);
     }

@@ -25,15 +25,15 @@ A comprehensive restaurant ordering application with QR code functionality, coll
 
 ## Technology Stack
 
-- **Frontend**: React 18 + TypeScript + Tailwind CSS
-- **Backend**: Supabase (PostgreSQL + Real-time subscriptions)
+- **Frontend**: React 18 + TypeScript + Tailwind CSS  
+- **Backend**: SQLite with better-sqlite3
 - **QR Codes**: qrcode + qr-scanner libraries
 - **Icons**: Lucide React
 - **Build Tool**: Vite
 
 ## Database Schema
 
-The application uses the following PostgreSQL tables:
+The application uses the following SQLite tables:
 
 - **users**: Customer information
 - **tables**: Restaurant table management
@@ -45,7 +45,6 @@ The application uses the following PostgreSQL tables:
 
 ### Prerequisites
 - Node.js 16+
-- Supabase account
 
 ### Setup Instructions
 
@@ -54,18 +53,11 @@ The application uses the following PostgreSQL tables:
    npm install
    ```
 
-2. **Database Setup**
-   - Click "Connect to Supabase" in the top right
-   - The database schema will be automatically created
-
-3. **Environment Variables**
-   - Copy `.env.example` to `.env`
-   - Add your Supabase credentials
-
-4. **Start Development**
+2. **Start Development**
    ```bash
    npm run dev
    ```
+   - The SQLite database will be automatically created with sample data
 
 ### Application Modes
 
@@ -134,30 +126,28 @@ The database is pre-populated with:
 
 The application uses a service-based architecture with:
 - **ApiService**: Centralized data operations
-- **Real-time subscriptions**: WebSocket-based updates
+- **Real-time updates**: Event-based system for live updates
 - **Error handling**: Comprehensive error management
 - **Type safety**: Full TypeScript coverage
 
 ## Security
 
-- **Row Level Security (RLS)**: Enabled on all tables
 - **Public access**: Appropriate for restaurant context
 - **Input validation**: Client and server-side validation
-- **SQL injection protection**: Parameterized queries
+- **SQL injection protection**: Prepared statements
 
 ## Performance
 
 - **Optimized queries**: Proper indexing and joins
-- **Real-time efficiency**: Minimal data transfer
+- **Real-time efficiency**: Event-based updates
 - **Responsive design**: Mobile-first approach
-- **Caching**: Efficient state management
+- **Local database**: Fast SQLite operations
 
 ## Deployment
 
-The application is ready for production deployment on any platform supporting:
+The application is ready for production deployment. Note that SQLite database will be created locally:
 - Node.js applications
-- Environment variables
-- PostgreSQL databases
+- File system access for SQLite database
 
 Recommended platforms:
 - Vercel
@@ -167,4 +157,4 @@ Recommended platforms:
 
 ## Support
 
-For technical issues or feature requests, refer to the application logs and database monitoring tools provided by Supabase.
+For technical issues or feature requests, check the browser console and application logs. The SQLite database file (`restaurant.db`) will be created in the project root.
