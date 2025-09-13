@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Save, X, Settings, Table, Menu as MenuIcon } from 'lucide-react';
+import { Plus, Edit2, Trash2, Save, X, Settings, Table, Menu as MenuIcon, Wifi, WifiOff } from 'lucide-react';
 import { Table as DBTable, MenuItem } from '../types/database';
 import { supabase } from '../lib/supabase';
 
@@ -14,6 +14,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
   const [editingMenuItem, setEditingMenuItem] = useState<MenuItem | null>(null);
   const [showAddTable, setShowAddTable] = useState(false);
   const [showAddMenuItem, setShowAddMenuItem] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'unknown' | 'connected' | 'disconnected' | 'testing'>('unknown');
 
   // Form states
   const [tableForm, setTableForm] = useState({ table_number: '' });
@@ -26,6 +27,30 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
   });
 
   const categories = ['Starters', 'Mains', 'Drinks', 'Desserts'];
+
+  const testConnection = async () => {
+    setConnectionStatus('testing');
+    try {
+      // Test basic connection by trying to fetch a single table
+      const { data, error } = await supabase
+        .from('tables')
+        .select('id')
+        .limit(1);
+      
+      if (error) {
+        console.error('Connection test failed:', error);
+        setConnectionStatus('disconnected');
+        alert(`Database connection failed: ${error.message}`);
+      } else {
+        setConnectionStatus('connected');
+        alert('Database connection successful!');
+      }
+    } catch (error) {
+      console.error('Connection test error:', error);
+      setConnectionStatus('disconnected');
+      alert(`Connection test failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
 
   useEffect(() => {
     loadData();
@@ -258,6 +283,41 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
                 <h1 className="text-2xl font-bold text-gray-900">Admin Panel</h1>
                 <p className="text-gray-600">Manage tables and menu items</p>
               </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={testConnection}
+                disabled={connectionStatus === 'testing'}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                  connectionStatus === 'connected'
+                    ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                    : connectionStatus === 'disconnected'
+                    ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {connectionStatus === 'testing' ? (
+                  <div className="animate-spin w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full" />
+                ) : connectionStatus === 'connected' ? (
+                  <Wifi className="w-4 h-4" />
+                ) : connectionStatus === 'disconnected' ? (
+                  <WifiOff className="w-4 h-4" />
+                ) : (
+                  <Wifi className="w-4 h-4" />
+                )}
+                {connectionStatus === 'testing' ? 'Testing...' : 'Test Connection'}
+              </button>
+              {connectionStatus !== 'unknown' && (
+                <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                  connectionStatus === 'connected'
+                    ? 'bg-green-100 text-green-800'
+                    : connectionStatus === 'disconnected'
+                    ? 'bg-red-100 text-red-800'
+                    : 'bg-gray-100 text-gray-800'
+                }`}>
+                  {connectionStatus === 'connected' ? 'Connected' : 'Disconnected'}
+                </div>
+              )}
             </div>
           </div>
         </div>
