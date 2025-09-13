@@ -73,19 +73,40 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
   // Table operations
   const handleAddTable = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!tableForm.table_number.trim()) {
+      alert('Please enter a table number.');
+      return;
+    }
+
+    // Check if table already exists
+    const existingTable = tables.find(t => t.table_number === tableForm.table_number.toUpperCase());
+    if (existingTable) {
+      alert('A table with this number already exists.');
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('tables')
         .insert([{ table_number: tableForm.table_number.toUpperCase() }]);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Database error:', error);
+        if (error.code === '23505') {
+          alert('A table with this number already exists.');
+        } else {
+          alert(`Failed to add table: ${error.message}`);
+        }
+        return;
+      }
       
       setTableForm({ table_number: '' });
       setShowAddTable(false);
       await loadTables();
     } catch (error) {
       console.error('Failed to add table:', error);
-      alert('Failed to add table. Please check if the table number already exists.');
+      alert('An unexpected error occurred while adding the table.');
     }
   };
 
