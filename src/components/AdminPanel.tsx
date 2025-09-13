@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Save, X, Settings, Table, Menu as MenuIcon } from 'lucide-react';
-import { Table, MenuItem } from '../types/database';
+import { Table as DBTable, MenuItem } from '../types/database';
 import { supabase } from '../lib/supabase';
 
 interface AdminPanelProps {}
 
 export const AdminPanel: React.FC<AdminPanelProps> = () => {
   const [activeTab, setActiveTab] = useState<'tables' | 'menu'>('tables');
-  const [tables, setTables] = useState<Table[]>([]);
+  const [tables, setTables] = useState<DBTable[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editingTable, setEditingTable] = useState<Table | null>(null);
+  const [editingTable, setEditingTable] = useState<DBTable | null>(null);
   const [editingMenuItem, setEditingMenuItem] = useState<MenuItem | null>(null);
   const [showAddTable, setShowAddTable] = useState(false);
   const [showAddMenuItem, setShowAddMenuItem] = useState(false);
@@ -89,7 +89,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
     }
   };
 
-  const handleUpdateTable = async (table: Table) => {
+  const handleUpdateTable = async (table: DBTable) => {
     try {
       const { error } = await supabase
         .from('tables')
