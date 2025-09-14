@@ -1,7 +1,7 @@
-const express = require('express');
-const cors = require('cors');
-const Database = require('better-sqlite3');
-const { generateUniqueCode } = require('./utils');
+import express from 'express';
+import cors from 'cors';
+import Database from 'better-sqlite3';
+import { generateUniqueCode } from './utils.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;

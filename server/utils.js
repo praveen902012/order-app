@@ -8,6 +8,6 @@ function generateUniqueCode() {
   return result;
 }
 
-module.exports = {
+export {
   generateUniqueCode
 };
