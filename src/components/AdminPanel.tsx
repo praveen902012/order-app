@@ -440,27 +440,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
                                 />
                                 <input
                                   type="url"
-                                  value={editingMenuItem.image_url || ''}
+                                 value={editingMenuItem?.image_url || ''}
                                   onChange={(e) => setEditingMenuItem({
                                     ...editingMenuItem,
-                                    image_url: e.target.value || null
+                                   image_url: e.target.value.trim() || null
                                   })}
-                                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                                   placeholder="Image URL (optional)"
                                 />
-                                {editingMenuItem.image_url && (
+                                {editingMenuItem?.image_url && (
                                   <div className="mt-2">
                                     <img
-                                      src={editingMenuItem.image_url}
+                                     src={editingMenuItem?.image_url}
                                       alt="Preview"
                                       className="w-16 h-16 object-cover rounded-lg border border-gray-200"
                                       onError={(e) => {
                                         const target = e.target as HTMLImageElement;
-                                        if (target.src !== 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400') {
-                                          target.src = 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400';
-                                        } else {
-                                          target.style.display = 'none';
-                                        }
+                                       target.style.display = 'none';
                                       }}
                                     />
                                   </div>
@@ -532,30 +528,29 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
                             </div>
                           ) : (
                             <div className="flex justify-between items-start">
-                              <div className="w-20 h-20 mr-4 flex-shrink-0">
+                             <div className="flex-shrink-0 mr-4">
                                 {item.image_url ? (
                                   <img
                                     src={item.image_url}
                                     alt={item.name}
-                                    className="w-full h-full object-cover rounded-lg border border-gray-200"
+                                   className="w-20 h-20 object-cover rounded-lg border border-gray-200"
                                     onError={(e) => {
                                       const target = e.target as HTMLImageElement;
-                                      if (target.src !== 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400') {
-                                        target.src = 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400';
-                                      } else {
-                                        target.style.display = 'none';
-                                        target.nextElementSibling?.classList.remove('hidden');
-                                      }
+                                     target.style.display = 'none';
+                                     const placeholder = target.parentElement?.querySelector('.image-placeholder') as HTMLElement;
+                                     if (placeholder) {
+                                       placeholder.style.display = 'flex';
+                                     }
                                     }}
                                   />
+                                 <div className="image-placeholder w-20 h-20 bg-gray-200 rounded-lg border border-gray-300 flex items-center justify-center" style={{ display: 'none' }}>
+                                   <span className="text-gray-400 text-xs text-center">Image Error</span>
+                                 </div>
                                 ) : (
-                                  <div className="w-full h-full bg-gray-200 rounded-lg border border-gray-300 flex items-center justify-center">
+                                 <div className="w-20 h-20 bg-gray-200 rounded-lg border border-gray-300 flex items-center justify-center">
                                     <span className="text-gray-400 text-xs text-center">No Image</span>
                                   </div>
                                 )}
-                                <div className="hidden w-full h-full bg-gray-200 rounded-lg border border-gray-300 flex items-center justify-center">
-                                  <span className="text-gray-400 text-xs text-center">Image Error</span>
-                                </div>
                               </div>
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-1">
