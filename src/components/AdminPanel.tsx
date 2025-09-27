@@ -6,7 +6,7 @@ import { apiService } from '../services/api';
 interface AdminPanelProps {}
 
 export const AdminPanel: React.FC<AdminPanelProps> = () => {
-  const [activeTab, setActiveTab] = useState<'tables' | 'menu'>('tables');
+  const [activeTab, setActiveTab] = useState<'tables' | 'menu' | 'unavailable'>('tables');
   const [tables, setTables] = useState<DBTable[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -15,6 +15,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
   const [showAddTable, setShowAddTable] = useState(false);
   const [showAddMenuItem, setShowAddMenuItem] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'unknown' | 'connected' | 'disconnected' | 'testing'>('unknown');
+
+  // Get unavailable items
+  const unavailableItems = menuItems.filter(item => !item.is_available);
 
   // Form states
   const [tableForm, setTableForm] = useState({ table_number: '' });
@@ -290,6 +293,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
               <MenuIcon className="w-5 h-5" />
               Menu Items ({menuItems.length})
             </button>
+            <button
+              onClick={() => setActiveTab('unavailable')}
+              className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors ${
+                activeTab === 'unavailable'
+                  ? 'text-purple-600 border-b-2 border-purple-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <WifiOff className="w-5 h-5" />
+              Unavailable Items ({unavailableItems.length})
+            </button>
           </div>
         </div>
 
@@ -536,6 +550,217 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* Unavailable Items Tab */}
+        {activeTab === 'unavailable' && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-gray-900">Unavailable Menu Items</h2>
+              <div className="text-sm text-gray-500">
+                {unavailableItems.length} items currently unavailable
+              </div>
+            </div>
+
+            {unavailableItems.length === 0 ? (
+              <div className="bg-white rounded-lg shadow-sm p-12 text-center">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Wifi className="w-8 h-8 text-green-600" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-2">All Items Available</h3>
+                <p className="text-gray-500">
+                  Great! All menu items are currently available for ordering.
+                </p>
+              </div>
+            ) : (
+              <div className="bg-white rounded-lg shadow-sm">
+                <div className="p-6">
+                  <div className="grid gap-4">
+                    {unavailableItems.map(item => (
+                      <div key={item.id} className="border border-red-200 rounded-lg p-4 bg-red-50">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <h4 className="font-medium text-gray-900">{item.name}</h4>
+                              <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800 border border-red-200">
+                                {item.category}
+                              </span>
+                              <span className="px-2 py-1 text-xs rounded-full bg-red-200 text-red-900 font-medium">
+                                Unavailable
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-600 mb-2">{item.description}</p>
+                            <p className="text-lg font-semibold text-purple-600">
+                              ${item.price.toFixed(2)}
+                            </p>
+                          </div>
+                          <div className="flex gap-2 ml-4">
+                            <button
+                              onClick={() => toggleMenuItemAvailability(item)}
+                              className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2 font-medium"
+                            >
+                              <Wifi className="w-4 h-4" />
+                              Make Available
+                            </button>
+                            <button
+                              onClick={() => setEditingMenuItem(item)}
+                              className="p-2 text-gray-500 hover:text-blue-600 transition-colors border border-gray-300 rounded-lg hover:border-blue-300"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteMenuItem(item.id)}
+                              className="p-2 text-gray-500 hover:text-red-600 transition-colors border border-gray-300 rounded-lg hover:border-red-300"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Bulk Actions */}
+                {unavailableItems.length > 1 && (
+                  <div className="border-t border-gray-200 p-4 bg-gray-50">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-gray-600">
+                        Bulk actions for {unavailableItems.length} unavailable items
+                      </p>
+                      <button
+                        onClick={async () => {
+                          if (confirm(`Make all ${unavailableItems.length} unavailable items available?`)) {
+                            try {
+                              for (const item of unavailableItems) {
+                                await apiService.updateMenuItem(item.id, { is_available: true });
+                              }
+                              await loadMenuItems();
+                            } catch (error) {
+                              console.error('Failed to update items:', error);
+                              alert('Failed to update some items. Please try again.');
+                            }
+                          }
+                        }}
+                        className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2 font-medium"
+                      >
+                        <Wifi className="w-4 h-4" />
+                        Make All Available
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Edit Modal for Unavailable Items */}
+            {editingMenuItem && !editingMenuItem.is_available && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-2xl p-6 w-full max-w-lg">
+                  <h3 className="text-lg font-semibold mb-4">Edit Unavailable Item</h3>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Item Name
+                        </label>
+                        <input
+                          type="text"
+                          value={editingMenuItem.name}
+                          onChange={(e) => setEditingMenuItem({
+                            ...editingMenuItem,
+                            name: e.target.value
+                          })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Category
+                        </label>
+                        <select
+                          value={editingMenuItem.category}
+                          onChange={(e) => setEditingMenuItem({
+                            ...editingMenuItem,
+                            category: e.target.value
+                          })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                        >
+                          {categories.map(cat => (
+                            <option key={cat} value={cat}>{cat}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Price ($)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={editingMenuItem.price}
+                        onChange={(e) => setEditingMenuItem({
+                          ...editingMenuItem,
+                          price: parseFloat(e.target.value) || 0
+                        })}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Description
+                      </label>
+                      <textarea
+                        value={editingMenuItem.description || ''}
+                        onChange={(e) => setEditingMenuItem({
+                          ...editingMenuItem,
+                          description: e.target.value
+                        })}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                        rows={3}
+                      />
+                    </div>
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <WifiOff className="w-5 h-5 text-yellow-600" />
+                        <h4 className="font-medium text-yellow-800">Availability Status</h4>
+                      </div>
+                      <p className="text-sm text-yellow-700 mb-3">
+                        This item is currently unavailable to customers. You can make it available after editing.
+                      </p>
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={editingMenuItem.is_available}
+                          onChange={(e) => setEditingMenuItem({
+                            ...editingMenuItem,
+                            is_available: e.target.checked
+                          })}
+                          className="rounded"
+                        />
+                        <span className="text-sm font-medium text-yellow-800">Make available for ordering</span>
+                      </label>
+                    </div>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => setEditingMenuItem(null)}
+                        className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => handleUpdateMenuItem(editingMenuItem)}
+                        className="flex-1 bg-purple-500 text-white py-3 rounded-lg font-medium hover:bg-purple-600 transition-colors"
+                      >
+                        Update Item
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
