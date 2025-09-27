@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Save, X, Settings, Table, Menu as MenuIcon, Wifi, WifiOff } from 'lucide-react';
 import { Table as DBTable, MenuItem } from '../types/database';
-import { ApiService } from '../services/api';
+import { apiService } from '../services/api';
 
 interface AdminPanelProps {}
 
@@ -32,7 +32,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
     setConnectionStatus('testing');
     try {
       // Test basic connection by trying to fetch tables
-      await ApiService.getAllTables();
+      await apiService.getAllTables();
       setConnectionStatus('connected');
       alert('Database connection successful!');
     } catch (error) {
@@ -59,7 +59,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
 
   const loadTables = async () => {
     try {
-      const tables = await ApiService.getAllTables();
+      const tables = await apiService.getAllTables();
       setTables(tables);
     } catch (error) {
       console.error('Failed to load tables:', error);
@@ -68,7 +68,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
 
   const loadMenuItems = async () => {
     try {
-      const menuItems = await ApiService.getAllMenuItems();
+      const menuItems = await apiService.getAllMenuItems();
       setMenuItems(menuItems);
     } catch (error) {
       console.error('Failed to load menu items:', error);
@@ -92,7 +92,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
     }
 
     try {
-      await ApiService.addTable(tableForm.table_number.toUpperCase());
+      await apiService.addTable(tableForm.table_number.toUpperCase());
       
       setTableForm({ table_number: '' });
       setShowAddTable(false);
@@ -109,7 +109,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
 
   const handleUpdateTable = async (table: DBTable) => {
     try {
-      await ApiService.updateTable(table.id, table.table_number);
+      await apiService.updateTable(table.id, table.table_number);
       
       setEditingTable(null);
       await loadTables();
@@ -125,7 +125,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
     }
 
     try {
-      await ApiService.deleteTable(tableId);
+      await apiService.deleteTable(tableId);
       await loadTables();
     } catch (error) {
       console.error('Failed to delete table:', error);
@@ -137,7 +137,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
   const handleAddMenuItem = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await ApiService.addMenuItem({
+      await apiService.addMenuItem({
         name: menuForm.name,
         category: menuForm.category,
         price: parseFloat(menuForm.price),
@@ -162,7 +162,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
 
   const handleUpdateMenuItem = async (item: MenuItem) => {
     try {
-      await ApiService.updateMenuItem(item.id, {
+      await apiService.updateMenuItem(item.id, {
         name: item.name,
         category: item.category,
         price: item.price,
@@ -184,7 +184,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
     }
 
     try {
-      await ApiService.deleteMenuItem(itemId);
+      await apiService.deleteMenuItem(itemId);
       await loadMenuItems();
     } catch (error) {
       console.error('Failed to delete menu item:', error);
@@ -194,7 +194,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
 
   const toggleMenuItemAvailability = async (item: MenuItem) => {
     try {
-      await ApiService.updateMenuItem(item.id, { is_available: !item.is_available });
+      await apiService.updateMenuItem(item.id, { is_available: !item.is_available });
       await loadMenuItems();
     } catch (error) {
       console.error('Failed to update availability:', error);

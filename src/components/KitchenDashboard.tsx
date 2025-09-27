@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, CheckCircle, Utensils, Truck } from 'lucide-react';
 import { Order, OrderStatus } from '../types/database';
-import { ApiService } from '../services/api';
+import { apiService } from '../services/api';
 
 export const KitchenDashboard: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -11,7 +11,7 @@ export const KitchenDashboard: React.FC = () => {
     loadOrders();
     
     // Subscribe to real-time updates
-    const subscription = ApiService.subscribeToOrders((updatedOrders) => {
+    const subscription = apiService.subscribeToOrders((updatedOrders) => {
       setOrders(updatedOrders);
     });
 
@@ -22,7 +22,7 @@ export const KitchenDashboard: React.FC = () => {
 
   const loadOrders = async () => {
     try {
-      const activeOrders = await ApiService.getAllActiveOrders();
+      const activeOrders = await apiService.getAllActiveOrders();
       setOrders(activeOrders);
     } catch (error) {
       console.error('Failed to load orders:', error);
@@ -35,7 +35,7 @@ export const KitchenDashboard: React.FC = () => {
 
   const updateOrderStatus = async (orderId: string, status: OrderStatus) => {
     try {
-      await ApiService.updateOrderStatus(orderId, status);
+      await apiService.updateOrderStatus(orderId, status);
       // Orders will be updated through real-time subscription
     } catch (error) {
       console.error('Failed to update order status:', error);

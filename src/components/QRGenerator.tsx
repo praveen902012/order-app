@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Download, QrCode } from 'lucide-react';
 import { generateQRCode } from '../lib/qr-utils';
-import { ApiService } from '../services/api';
+import { apiService } from '../services/api';
 import { Table } from '../types/database';
 
 export const QRGenerator: React.FC = () => {
@@ -16,7 +16,7 @@ export const QRGenerator: React.FC = () => {
 
   const loadTables = async () => {
     try {
-      const tables = await ApiService.getAllTables();
+      const tables = await apiService.getAllTables();
       setTables(tables);
     } catch (error) {
       console.error('Failed to load tables:', error);

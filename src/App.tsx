@@ -7,7 +7,7 @@ import { KitchenDashboard } from './components/KitchenDashboard';
 import { QRGenerator } from './components/QRGenerator';
 import { AdminPanel } from './components/AdminPanel';
 import { Order } from './types/database';
-import { ApiService } from './services/api';
+import { apiService } from './services/api';
 
 type AppMode = 'home' | 'customer' | 'kitchen' | 'qr-generator' | 'admin';
 type CustomerState = 'login' | 'code-entry' | 'menu';
@@ -52,7 +52,7 @@ function App() {
   const handleTableLogin = async (tableNumber: string, mobileNumber: string) => {
     setLoading(true);
     try {
-      const result = await ApiService.initializeOrder(tableNumber, mobileNumber);
+      const result = await apiService.initializeOrder(tableNumber, mobileNumber);
       setCurrentOrder(result.order);
       setUniqueCode(result.uniqueCode);
       setCustomerState('menu');
@@ -67,7 +67,7 @@ function App() {
   const handleCodeEntry = async (code: string) => {
     setLoading(true);
     try {
-      const order = await ApiService.getOrderByCode(code);
+      const order = await apiService.getOrderByCode(code);
       if (order) {
         setCurrentOrder(order);
         setUniqueCode(code);

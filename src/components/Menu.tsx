@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Minus, ShoppingCart, Share2, Copy, Trash2 } from 'lucide-react';
 import { MenuItem, CartItem, Order } from '../types/database';
-import { ApiService } from '../services/api';
+import { apiService } from '../services/api';
 
 interface MenuProps {
   order: Order;
@@ -33,7 +33,7 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
 
   const loadMenu = async () => {
     try {
-      const items = await ApiService.getMenu();
+      const items = await apiService.getMenu();
       setMenuItems(items);
     } catch (error) {
       console.error('Failed to load menu:', error);
@@ -85,7 +85,7 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
     try {
       // Add all cart items to the order
       for (const item of cart) {
-        await ApiService.addOrderItem(order.id, item.id, item.quantity);
+        await apiService.addOrderItem(order.id, item.id, item.quantity);
       }
       
       // Clear the cart after successful order placement

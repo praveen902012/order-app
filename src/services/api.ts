@@ -1,56 +1,7 @@
+import { Order, Table, MenuItem, OrderStatus, OrderItem } from '../types/database';
+
 // API Service for Restaurant Ordering System
 const API_BASE_URL = 'http://localhost:3001';
-
-export interface User {
-  id: string;
-  mobile_number: string;
-  created_at: string;
-}
-
-export interface Table {
-  id: string;
-  table_number: string;
-  is_occupied: boolean;
-  current_order_id?: string;
-}
-
-export interface MenuItem {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  category: string;
-  is_available: boolean;
-}
-
-export interface Order {
-  id: string;
-  user_id: string;
-  table_id: string;
-  order_code: string;
-  status: 'pending' | 'preparing' | 'ready' | 'served';
-  total_amount: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface OrderItem {
-  id: string;
-  order_id: string;
-  menu_item_id: string;
-  quantity: number;
-  price: number;
-}
-
-export interface OrderWithDetails extends Order {
-  table_number: string;
-  items: Array<{
-    id: string;
-    name: string;
-    quantity: number;
-    price: number;
-  }>;
-}
 
 class ApiService {
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -75,27 +26,10 @@ class ApiService {
     }
   }
 
-  // User operations
-  async createUser(mobileNumber: string): Promise<User> {
-    return this.request<User>('/api/users', {
-      method: 'POST',
-      body: JSON.stringify({ mobile_number: mobileNumber }),
-    });
-  }
-
-  // Table operations
-  async getTables(): Promise<Table[]> {
-    return this.request<Table[]>('/api/tables');
-  }
-
-  async getTable(tableNumber: string): Promise<Table> {
-    return this.request<Table>(`/api/tables/${tableNumber}`);
-  }
-
-  async loginToTable(tableNumber: string, mobileNumber: string): Promise<{
-    user: User;
-    table: Table;
+  // Initialize order (table login)
+  async initializeOrder(tableNumber: string, mobileNumber: string): Promise<{
     order: Order;
+    uniqueCode: string;
   }> {
     return this.request('/api/tables/login', {
       method: 'POST',
@@ -103,25 +37,87 @@ class ApiService {
     });
   }
 
+  // Get order by code
+  async getOrderByCode(orderCode: string): Promise<Order | null> {
+    try {
+      return await this.request<Order>(`/api/orders/code/${orderCode}`);
+    } catch (error) {
+      return null;
+    }
+  }
+
   // Menu operations
   async getMenu(): Promise<MenuItem[]> {
     return this.request<MenuItem[]>('/api/menu');
   }
 
+  async getAllMenuItems(): Promise<MenuItem[]> {
+    return this.request<MenuItem[]>('/api/menu');
+  }
+
+  async addMenuItem(item: {
+    name: string;
+    category: string;
+    price: number;
+    description: string | null;
+    is_available: boolean;
+  }): Promise<MenuItem> {
+    return this.request<MenuItem>('/api/menu', {
+      method: 'POST',
+      body: JSON.stringify(item),
+    });
+  }
+
+  async updateMenuItem(itemId: string, updates: {
+    name?: string;
+    category?: string;
+    price?: number;
+    description?: string | null;
+    is_available?: boolean;
+  }): Promise<MenuItem> {
+    return this.request<MenuItem>(`/api/menu/${itemId}`, {
+      method: 'PUT',
+      body: JSON.stringify(updates),
+    });
+  }
+
+  async deleteMenuItem(itemId: string): Promise<void> {
+    return this.request<void>(`/api/menu/${itemId}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // Table operations
+  async getAllTables(): Promise<Table[]> {
+    return this.request<Table[]>('/api/tables');
+  }
+
+  async addTable(tableNumber: string): Promise<Table> {
+    return this.request<Table>('/api/tables', {
+      method: 'POST',
+      body: JSON.stringify({ table_number: tableNumber }),
+    });
+  }
+
+  async updateTable(tableId: string, tableNumber: string): Promise<Table> {
+    return this.request<Table>(`/api/tables/${tableId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ table_number: tableNumber }),
+    });
+  }
+
+  async deleteTable(tableId: string): Promise<void> {
+    return this.request<void>(`/api/tables/${tableId}`, {
+      method: 'DELETE',
+    });
+  }
+
   // Order operations
-  async getOrder(orderId: string): Promise<OrderWithDetails> {
-    return this.request<OrderWithDetails>(`/api/orders/${orderId}`);
+  async getAllActiveOrders(): Promise<Order[]> {
+    return this.request<Order[]>('/api/orders/active');
   }
 
-  async getOrderByCode(orderCode: string): Promise<OrderWithDetails> {
-    return this.request<OrderWithDetails>(`/api/orders/code/${orderCode}`);
-  }
-
-  async getAllOrders(): Promise<OrderWithDetails[]> {
-    return this.request<OrderWithDetails[]>('/api/orders');
-  }
-
-  async updateOrderStatus(orderId: string, status: Order['status']): Promise<Order> {
+  async updateOrderStatus(orderId: string, status: OrderStatus): Promise<Order> {
     return this.request<Order>(`/api/orders/${orderId}/status`, {
       method: 'PUT',
       body: JSON.stringify({ status }),
@@ -136,28 +132,31 @@ class ApiService {
     });
   }
 
-  async updateOrderItem(itemId: string, quantity: number): Promise<OrderItem> {
+  async updateOrderItemQuantity(itemId: string, quantity: number): Promise<OrderItem> {
     return this.request<OrderItem>(`/api/order-items/${itemId}`, {
       method: 'PUT',
       body: JSON.stringify({ quantity }),
     });
   }
 
-  async removeOrderItem(itemId: string): Promise<void> {
-    return this.request<void>(`/api/order-items/${itemId}`, {
-      method: 'DELETE',
-    });
-  }
+  // Real-time subscriptions (mock implementation)
+  subscribeToOrders(callback: (orders: Order[]) => void) {
+    // Simple polling implementation for real-time updates
+    const interval = setInterval(async () => {
+      try {
+        const orders = await this.getAllActiveOrders();
+        callback(orders);
+      } catch (error) {
+        console.error('Failed to fetch orders for subscription:', error);
+      }
+    }, 5000); // Poll every 5 seconds
 
-  // QR Code operations
-  async generateQRCode(tableNumber: string): Promise<{ qrCodeUrl: string }> {
-    return this.request<{ qrCodeUrl: string }>(`/api/qr/generate/${tableNumber}`);
-  }
-
-  // Health check
-  async healthCheck(): Promise<{ status: string; timestamp: string }> {
-    return this.request<{ status: string; timestamp: string }>('/api/health');
+    return {
+      unsubscribe: () => clearInterval(interval)
+    };
   }
 }
 
+// Export both the class and an instance
+export { ApiService };
 export const apiService = new ApiService();
