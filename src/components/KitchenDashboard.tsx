@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, CheckCircle, Utensils, Truck } from 'lucide-react';
+import { Clock, CircleCheck as CheckCircle, Utensils, Truck } from 'lucide-react';
 import { Order, OrderStatus } from '../types/database';
 import { apiService } from '../services/api';
 
