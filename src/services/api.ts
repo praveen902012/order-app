@@ -60,6 +60,7 @@ class ApiService {
     category: string;
     price: number;
     description: string | null;
+    image_url: string | null;
     is_available: boolean;
   }): Promise<MenuItem> {
     return this.request<MenuItem>('/api/menu', {
@@ -73,6 +74,7 @@ class ApiService {
     category?: string;
     price?: number;
     description?: string | null;
+    image_url?: string | null;
     is_available?: boolean;
   }): Promise<MenuItem> {
     return this.request<MenuItem>(`/api/menu/${itemId}`, {

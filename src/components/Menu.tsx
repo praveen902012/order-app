@@ -167,6 +167,19 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
             <div className="grid gap-4">
               {category.items.map(item => (
                 <div key={item.id} className="bg-white rounded-lg p-4 shadow-sm">
+                  {item.image_url && (
+                    <div className="mb-3">
+                      <img
+                        src={item.image_url}
+                        alt={item.name}
+                        className="w-full h-32 object-cover rounded-lg"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                  )}
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex-1">
                       <h3 className="font-medium text-gray-900">{item.name}</h3>

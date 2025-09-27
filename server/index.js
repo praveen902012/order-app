@@ -46,6 +46,7 @@ const createTables = () => {
       category TEXT NOT NULL,
       price REAL NOT NULL,
       description TEXT,
+      image_url TEXT,
       is_available BOOLEAN DEFAULT 1,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
@@ -99,45 +100,45 @@ const initializeSampleData = () => {
 
     // Insert sample menu items
     const insertMenuItem = db.prepare(`
-      INSERT INTO menu (name, category, price, description, is_available) 
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO menu (name, category, price, description, image_url, is_available) 
+      VALUES (?, ?, ?, ?, ?, ?)
     `);
 
     const menuItems = [
       // Starters
-      ['Garlic Bread', 'Starters', 8.99, 'Crispy bread with garlic butter and herbs', 1],
-      ['Caesar Salad', 'Starters', 12.99, 'Fresh romaine lettuce, parmesan, croutons', 1],
-      ['Chicken Wings', 'Starters', 14.99, 'Spicy buffalo wings with blue cheese dip', 1],
-      ['Bruschetta', 'Starters', 10.99, 'Toasted bread with tomato, basil, and mozzarella', 1],
-      ['Mozzarella Sticks', 'Starters', 9.99, 'Golden fried mozzarella with marinara sauce', 1],
-      ['Onion Rings', 'Starters', 7.99, 'Crispy beer-battered onion rings', 1],
+      ['Garlic Bread', 'Starters', 8.99, 'Crispy bread with garlic butter and herbs', 'https://images.pexels.com/photos/4518843/pexels-photo-4518843.jpeg?auto=compress&cs=tinysrgb&w=400', 1],
+      ['Caesar Salad', 'Starters', 12.99, 'Fresh romaine lettuce, parmesan, croutons', 'https://images.pexels.com/photos/2097090/pexels-photo-2097090.jpeg?auto=compress&cs=tinysrgb&w=400', 1],
+      ['Chicken Wings', 'Starters', 14.99, 'Spicy buffalo wings with blue cheese dip', 'https://images.pexels.com/photos/60616/fried-chicken-chicken-fried-crunchy-60616.jpeg?auto=compress&cs=tinysrgb&w=400', 1],
+      ['Bruschetta', 'Starters', 10.99, 'Toasted bread with tomato, basil, and mozzarella', 'https://images.pexels.com/photos/5792329/pexels-photo-5792329.jpeg?auto=compress&cs=tinysrgb&w=400', 1],
+      ['Mozzarella Sticks', 'Starters', 9.99, 'Golden fried mozzarella with marinara sauce', 'https://images.pexels.com/photos/4518843/pexels-photo-4518843.jpeg?auto=compress&cs=tinysrgb&w=400', 1],
+      ['Onion Rings', 'Starters', 7.99, 'Crispy beer-battered onion rings', 'https://images.pexels.com/photos/209540/pexels-photo-209540.jpeg?auto=compress&cs=tinysrgb&w=400', 1],
       
       // Mains
-      ['Margherita Pizza', 'Mains', 18.99, 'Classic tomato sauce, mozzarella, and basil', 1],
-      ['Grilled Salmon', 'Mains', 26.99, 'Atlantic salmon with lemon butter sauce', 1],
-      ['Chicken Parmesan', 'Mains', 22.99, 'Breaded chicken breast with marinara and cheese', 1],
-      ['Beef Burger', 'Mains', 19.99, 'Angus beef with lettuce, tomato, and fries', 1],
-      ['Pasta Carbonara', 'Mains', 17.99, 'Creamy pasta with bacon and parmesan', 1],
-      ['BBQ Ribs', 'Mains', 24.99, 'Slow-cooked ribs with BBQ sauce and coleslaw', 1],
-      ['Fish and Chips', 'Mains', 16.99, 'Beer-battered cod with crispy fries', 1],
-      ['Vegetarian Pasta', 'Mains', 15.99, 'Penne with roasted vegetables and pesto', 1],
+      ['Margherita Pizza', 'Mains', 18.99, 'Classic tomato sauce, mozzarella, and basil', 'https://images.pexels.com/photos/315755/pexels-photo-315755.jpeg?auto=compress&cs=tinysrgb&w=400', 1],
+      ['Grilled Salmon', 'Mains', 26.99, 'Atlantic salmon with lemon butter sauce', 'https://images.pexels.com/photos/725991/pexels-photo-725991.jpeg?auto=compress&cs=tinysrgb&w=400', 1],
+      ['Chicken Parmesan', 'Mains', 22.99, 'Breaded chicken breast with marinara and cheese', 'https://images.pexels.com/photos/106343/pexels-photo-106343.jpeg?auto=compress&cs=tinysrgb&w=400', 1],
+      ['Beef Burger', 'Mains', 19.99, 'Angus beef with lettuce, tomato, and fries', 'https://images.pexels.com/photos/1639557/pexels-photo-1639557.jpeg?auto=compress&cs=tinysrgb&w=400', 1],
+      ['Pasta Carbonara', 'Mains', 17.99, 'Creamy pasta with bacon and parmesan', 'https://images.pexels.com/photos/1279330/pexels-photo-1279330.jpeg?auto=compress&cs=tinysrgb&w=400', 1],
+      ['BBQ Ribs', 'Mains', 24.99, 'Slow-cooked ribs with BBQ sauce and coleslaw', 'https://images.pexels.com/photos/1268549/pexels-photo-1268549.jpeg?auto=compress&cs=tinysrgb&w=400', 1],
+      ['Fish and Chips', 'Mains', 16.99, 'Beer-battered cod with crispy fries', 'https://images.pexels.com/photos/1633578/pexels-photo-1633578.jpeg?auto=compress&cs=tinysrgb&w=400', 1],
+      ['Vegetarian Pasta', 'Mains', 15.99, 'Penne with roasted vegetables and pesto', 'https://images.pexels.com/photos/1279330/pexels-photo-1279330.jpeg?auto=compress&cs=tinysrgb&w=400', 1],
       
       // Drinks
-      ['Coca Cola', 'Drinks', 3.99, 'Classic soft drink', 1],
-      ['Orange Juice', 'Drinks', 4.99, 'Fresh squeezed orange juice', 1],
-      ['Coffee', 'Drinks', 2.99, 'Premium roasted coffee', 1],
-      ['Beer', 'Drinks', 5.99, 'Ice cold draft beer', 1],
-      ['House Wine', 'Drinks', 7.99, 'Red or white wine by the glass', 1],
-      ['Iced Tea', 'Drinks', 2.99, 'Refreshing iced tea with lemon', 1],
-      ['Milkshake', 'Drinks', 5.99, 'Vanilla, chocolate, or strawberry milkshake', 1],
-      ['Sparkling Water', 'Drinks', 2.49, 'Premium sparkling water', 1],
+      ['Coca Cola', 'Drinks', 3.99, 'Classic soft drink', 'https://images.pexels.com/photos/50593/coca-cola-cold-drink-soft-drink-coke-50593.jpeg?auto=compress&cs=tinysrgb&w=400', 1],
+      ['Orange Juice', 'Drinks', 4.99, 'Fresh squeezed orange juice', 'https://images.pexels.com/photos/96974/pexels-photo-96974.jpeg?auto=compress&cs=tinysrgb&w=400', 1],
+      ['Coffee', 'Drinks', 2.99, 'Premium roasted coffee', 'https://images.pexels.com/photos/302899/pexels-photo-302899.jpeg?auto=compress&cs=tinysrgb&w=400', 1],
+      ['Beer', 'Drinks', 5.99, 'Ice cold draft beer', 'https://images.pexels.com/photos/1552630/pexels-photo-1552630.jpeg?auto=compress&cs=tinysrgb&w=400', 1],
+      ['House Wine', 'Drinks', 7.99, 'Red or white wine by the glass', 'https://images.pexels.com/photos/434311/pexels-photo-434311.jpeg?auto=compress&cs=tinysrgb&w=400', 1],
+      ['Iced Tea', 'Drinks', 2.99, 'Refreshing iced tea with lemon', 'https://images.pexels.com/photos/1638280/pexels-photo-1638280.jpeg?auto=compress&cs=tinysrgb&w=400', 1],
+      ['Milkshake', 'Drinks', 5.99, 'Vanilla, chocolate, or strawberry milkshake', 'https://images.pexels.com/photos/103566/pexels-photo-103566.jpeg?auto=compress&cs=tinysrgb&w=400', 1],
+      ['Sparkling Water', 'Drinks', 2.49, 'Premium sparkling water', 'https://images.pexels.com/photos/416528/pexels-photo-416528.jpeg?auto=compress&cs=tinysrgb&w=400', 1],
       
       // Desserts
-      ['Chocolate Cake', 'Desserts', 8.99, 'Rich chocolate cake with vanilla ice cream', 1],
-      ['Tiramisu', 'Desserts', 9.99, 'Classic Italian dessert with coffee and mascarpone', 1],
-      ['Ice Cream', 'Desserts', 6.99, 'Vanilla, chocolate, or strawberry', 1],
-      ['Cheesecake', 'Desserts', 7.99, 'New York style cheesecake with berry sauce', 1],
-      ['Apple Pie', 'Desserts', 6.99, 'Homemade apple pie with cinnamon ice cream', 1]
+      ['Chocolate Cake', 'Desserts', 8.99, 'Rich chocolate cake with vanilla ice cream', 'https://images.pexels.com/photos/291528/pexels-photo-291528.jpeg?auto=compress&cs=tinysrgb&w=400', 1],
+      ['Tiramisu', 'Desserts', 9.99, 'Classic Italian dessert with coffee and mascarpone', 'https://images.pexels.com/photos/6880219/pexels-photo-6880219.jpeg?auto=compress&cs=tinysrgb&w=400', 1],
+      ['Ice Cream', 'Desserts', 6.99, 'Vanilla, chocolate, or strawberry', 'https://images.pexels.com/photos/1362534/pexels-photo-1362534.jpeg?auto=compress&cs=tinysrgb&w=400', 1],
+      ['Cheesecake', 'Desserts', 7.99, 'New York style cheesecake with berry sauce', 'https://images.pexels.com/photos/140831/pexels-photo-140831.jpeg?auto=compress&cs=tinysrgb&w=400', 1],
+      ['Apple Pie', 'Desserts', 6.99, 'Homemade apple pie with cinnamon ice cream', 'https://images.pexels.com/photos/7525161/pexels-photo-7525161.jpeg?auto=compress&cs=tinysrgb&w=400', 1]
     ];
 
     menuItems.forEach(item => {
@@ -309,12 +310,12 @@ app.get('/api/menu/all', (req, res) => {
 
 app.post('/api/menu', (req, res) => {
   try {
-    const { name, category, price, description, is_available } = req.body;
+    const { name, category, price, description, image_url, is_available } = req.body;
     const stmt = db.prepare(`
-      INSERT INTO menu (name, category, price, description, is_available) 
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO menu (name, category, price, description, image_url, is_available) 
+      VALUES (?, ?, ?, ?, ?, ?)
     `);
-    stmt.run(name, category, price, description, is_available ? 1 : 0);
+    stmt.run(name, category, price, description, image_url, is_available ? 1 : 0);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -323,7 +324,7 @@ app.post('/api/menu', (req, res) => {
 
 app.put('/api/menu/:id', (req, res) => {
   try {
-    const { name, category, price, description, is_available } = req.body;
+    const { name, category, price, description, image_url, is_available } = req.body;
     const fields = [];
     const values = [];
     
@@ -342,6 +343,10 @@ app.put('/api/menu/:id', (req, res) => {
     if (description !== undefined) {
       fields.push('description = ?');
       values.push(description);
+    }
+    if (image_url !== undefined) {
+      fields.push('image_url = ?');
+      values.push(image_url);
     }
     if (is_available !== undefined) {
       fields.push('is_available = ?');
@@ -397,7 +402,7 @@ app.post('/api/orders/initialize', (req, res) => {
       if (existingOrder) {
         // Get order items
         const itemsStmt = db.prepare(`
-          SELECT oi.*, m.name, m.category, m.price, m.description
+          SELECT oi.*, m.name, m.category, m.price, m.description, m.image_url
           FROM order_items oi
           LEFT JOIN menu m ON oi.menu_id = m.id
           WHERE oi.order_id = ?
@@ -425,6 +430,7 @@ app.post('/api/orders/initialize', (req, res) => {
               category: item.category,
               price: item.price,
               description: item.description,
+              image_url: item.image_url,
               is_available: true,
               created_at: ''
             }
@@ -498,7 +504,7 @@ app.get('/api/orders/code/:code', (req, res) => {
 
     // Get order items
     const itemsStmt = db.prepare(`
-      SELECT oi.*, m.name, m.category, m.price, m.description
+      SELECT oi.*, m.name, m.category, m.price, m.description, m.image_url
       FROM order_items oi
       LEFT JOIN menu m ON oi.menu_id = m.id
       WHERE oi.order_id = ?
@@ -526,6 +532,7 @@ app.get('/api/orders/code/:code', (req, res) => {
           category: item.category,
           price: item.price,
           description: item.description,
+          image_url: item.image_url,
           is_available: true,
           created_at: ''
         }
@@ -552,7 +559,7 @@ app.get('/api/orders/active', (req, res) => {
     // Get order items for each order
     const ordersWithItems = orders.map(order => {
       const itemsStmt = db.prepare(`
-        SELECT oi.*, m.name, m.category, m.price, m.description
+        SELECT oi.*, m.name, m.category, m.price, m.description, m.image_url
         FROM order_items oi
         LEFT JOIN menu m ON oi.menu_id = m.id
         WHERE oi.order_id = ?
@@ -580,6 +587,7 @@ app.get('/api/orders/active', (req, res) => {
             category: item.category,
             price: item.price,
             description: item.description,
+            image_url: item.image_url,
             is_available: true,
             created_at: ''
           }
