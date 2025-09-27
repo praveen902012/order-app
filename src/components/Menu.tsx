@@ -309,10 +309,19 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
               {allTableItems.length > 0 && (
                 <button
                   onClick={() => setShowOrderStatus(true)}
-                  className="flex items-center gap-2 bg-green-100 text-green-700 px-3 py-2 rounded-lg hover:bg-green-200 transition-colors text-sm"
+                  className="flex items-center gap-2 bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium"
                 >
-                  <CheckCircle className="w-4 h-4" />
-                  <span className="hidden sm:inline">Status</span>
+                  <Utensils className="w-4 h-4" />
+                  <span>Orders</span>
+                </button>
+              )}
+              {allTableItems.length === 0 && hasPlacedFirstOrder && (
+                <button
+                  onClick={() => setShowOrderStatus(true)}
+                  className="flex items-center gap-2 bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors text-sm font-medium"
+                >
+                  <Utensils className="w-4 h-4" />
+                  <span>Orders</span>
                 </button>
               )}
               <button
