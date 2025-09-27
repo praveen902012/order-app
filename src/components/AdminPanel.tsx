@@ -515,19 +515,31 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
                             </div>
                           ) : (
                             <div className="flex justify-between items-start">
-                              {item.image_url && (
-                                <div className="w-20 h-20 mr-4 flex-shrink-0">
+                              <div className="w-20 h-20 mr-4 flex-shrink-0">
+                                {item.image_url ? (
                                   <img
                                     src={item.image_url}
                                     alt={item.name}
-                                    className="w-full h-full object-cover rounded-lg"
+                                    className="w-full h-full object-cover rounded-lg border border-gray-200"
                                     onError={(e) => {
                                       const target = e.target as HTMLImageElement;
-                                      target.style.display = 'none';
+                                      if (target.src !== 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400') {
+                                        target.src = 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400';
+                                      } else {
+                                        target.style.display = 'none';
+                                        target.nextElementSibling?.classList.remove('hidden');
+                                      }
                                     }}
                                   />
+                                ) : (
+                                  <div className="w-full h-full bg-gray-200 rounded-lg border border-gray-300 flex items-center justify-center">
+                                    <span className="text-gray-400 text-xs text-center">No Image</span>
+                                  </div>
+                                )}
+                                <div className="hidden w-full h-full bg-gray-200 rounded-lg border border-gray-300 flex items-center justify-center">
+                                  <span className="text-gray-400 text-xs text-center">Image Error</span>
                                 </div>
-                              )}
+                              </div>
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-1">
                                   <h4 className="font-medium text-gray-900">{item.name}</h4>
@@ -607,19 +619,31 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
                     {unavailableItems.map(item => (
                       <div key={item.id} className="border border-red-200 rounded-lg p-4 bg-red-50">
                         <div className="flex justify-between items-start">
-                          {item.image_url && (
-                            <div className="w-20 h-20 mr-4 flex-shrink-0">
+                          <div className="w-20 h-20 mr-4 flex-shrink-0">
+                            {item.image_url ? (
                               <img
                                 src={item.image_url}
                                 alt={item.name}
                                 className="w-full h-full object-cover rounded-lg border-2 border-red-200"
                                 onError={(e) => {
                                   const target = e.target as HTMLImageElement;
-                                  target.style.display = 'none';
+                                  if (target.src !== 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400') {
+                                    target.src = 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400';
+                                  } else {
+                                    target.style.display = 'none';
+                                    target.nextElementSibling?.classList.remove('hidden');
+                                  }
                                 }}
                               />
+                            ) : (
+                              <div className="w-full h-full bg-red-100 rounded-lg border-2 border-red-200 flex items-center justify-center">
+                                <span className="text-red-400 text-xs text-center">No Image</span>
+                              </div>
+                            )}
+                            <div className="hidden w-full h-full bg-red-100 rounded-lg border-2 border-red-200 flex items-center justify-center">
+                              <span className="text-red-400 text-xs text-center">Image Error</span>
                             </div>
-                          )}
+                          </div>
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
                               <h4 className="font-medium text-gray-900">{item.name}</h4>
@@ -734,10 +758,35 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
                             <img
                               src={editingMenuItem.image_url}
                               alt="Preview"
-                              className="w-24 h-24 object-cover rounded-lg border"
+                              className="w-24 h-24 object-cover rounded-lg border border-gray-300"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
-                                target.style.display = 'none';
+                                if (target.src !== 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400') {
+                                  target.src = 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400';
+                        {editingMenuItem.image_url && (
+                          <div className="mt-2">
+                            <img
+                              src={editingMenuItem.image_url}
+                              alt="Preview"
+                              className="w-24 h-24 object-cover rounded-lg border border-gray-300"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                if (target.src !== 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400') {
+                                  target.src = 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400';
+                                } else {
+                                  target.style.display = 'none';
+                                }
+                              }}
+                            />
+                          </div>
+                        )}
+                                } else {
+                                  target.style.display = 'none';
+                                  const errorDiv = document.createElement('div');
+                                  errorDiv.className = 'w-24 h-24 bg-gray-200 rounded-lg border border-gray-300 flex items-center justify-center';
+                                  errorDiv.innerHTML = '<span class="text-gray-400 text-xs">Invalid URL</span>';
+                                  target.parentNode?.appendChild(errorDiv);
+                                }
                               }}
                             />
                           </div>
