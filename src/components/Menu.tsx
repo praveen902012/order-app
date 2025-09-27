@@ -30,17 +30,19 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
     // Start polling for order status updates
     startOrderStatusPolling();
     
-    // Check if user has existing orders (returning user)
-    if (existingOrderItems.length > 0 || allTableItems.length > 0) {
-      setHasPlacedFirstOrder(true);
-    }
-    
     return () => {
       if (orderStatusPolling) {
         clearInterval(orderStatusPolling);
       }
     };
   }, []);
+
+  // Check if user has existing orders after data loads
+  useEffect(() => {
+    if (existingOrderItems.length > 0 || allTableItems.length > 0) {
+      setHasPlacedFirstOrder(true);
+    }
+  }, [existingOrderItems, allTableItems]);
 
   const loadMenu = async () => {
     try {
@@ -69,10 +71,50 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
           const allItems = currentOrder.all_table_items.map(item => ({
             ...item.menu!,
             quantity: item.quantity,
-            order_status: item.order_status,
-            order_created_at: item.order_created_at
+            order_status: item.order_status || 'Pending',
+            order_created_at: item.order_created_at || item.created_at
           }));
           setAllTableItems(allItems);
+        } else {
+          // If no all_table_items, use current order items as fallback
+          const fallbackItems = currentOrder.order_items.map(item => ({
+            ...item.menu!,
+            quantity: item.quantity,
+            order_status: currentOrder.status || 'Pending',
+            order_created_at: currentOrder.created_at
+          }));
+          setAllTableItems(fallbackItems);
+        }
+      } else {
+        // Try to get order data directly if code lookup fails
+        const activeOrders = await apiService.getAllActiveOrders();
+        const tableOrders = activeOrders.filter(o => o.unique_code === uniqueCode);
+        
+        if (tableOrders.length > 0) {
+          const allItems: any[] = [];
+          tableOrders.forEach(order => {
+            if (order.order_items) {
+              order.order_items.forEach(item => {
+                allItems.push({
+                  ...item.menu!,
+                  quantity: item.quantity,
+                  order_status: order.status || 'Pending',
+                  order_created_at: order.created_at
+                });
+              });
+            }
+          });
+          setAllTableItems(allItems);
+          
+          // Set existing items from most recent order
+          const mostRecentOrder = tableOrders[0];
+          if (mostRecentOrder.order_items) {
+            const existingItems = mostRecentOrder.order_items.map(item => ({
+              ...item.menu!,
+              quantity: item.quantity
+            }));
+            setExistingOrderItems(existingItems);
+          }
         }
       }
     } catch (error) {
