@@ -420,20 +420,20 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
             <div className="grid gap-4">
               {category.items.map(item => (
                 <div key={item.id} className="bg-white rounded-lg p-4 shadow-sm">
-                  {item.image_url && (
-                    <div className="mb-3">
-                      <img
-                        src={item.image_url}
-                        alt={item.name}
-                        className="w-full h-32 object-cover rounded-lg"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                        }}
-                      />
-                    </div>
-                  )}
-                  <div className="flex justify-between items-start mb-2">
+                  <div className="flex gap-4 mb-2">
+                    {item.image_url && (
+                      <div className="flex-shrink-0">
+                        <img
+                          src={item.image_url}
+                          alt={item.name}
+                          className="w-24 h-24 object-cover rounded-lg border border-gray-200"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.src = 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=200';
+                          }}
+                        />
+                      </div>
+                    )}
                     <div className="flex-1">
                       <h3 className="font-medium text-gray-900">{item.name}</h3>
                       <p className="text-sm text-gray-600 mt-1">{item.description}</p>
@@ -441,8 +441,10 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
                         ${item.price.toFixed(2)}
                       </p>
                     </div>
-                    
-                    <div className="flex items-center gap-2 ml-4">
+                  </div>
+                  
+                  <div className="flex justify-end">
+                    <div className="flex items-center gap-2">
                       {getItemQuantity(item.id) > 0 ? (
                         <div className="flex items-center gap-2">
                           <button
