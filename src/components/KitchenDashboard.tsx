@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, CircleCheck as CheckCircle, Utensils, Truck } from 'lucide-react';
+import { Clock, CircleCheck as CheckCircle, Utensils, Truck, Printer } from 'lucide-react';
 import { Order, OrderStatus } from '../types/database';
 import { apiService } from '../services/api';
+import { printOrderSummary, showPrintPreview } from '../utils/printer';
 
 export const KitchenDashboard: React.FC = () => {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -35,11 +36,40 @@ export const KitchenDashboard: React.FC = () => {
 
   const updateOrderStatus = async (orderId: string, status: OrderStatus) => {
     try {
+      // If marking as "Preparing", print the order summary
+      if (status === 'Preparing') {
+        const order = orders.find(o => o.id === orderId);
+        if (order) {
+          const printableOrder = {
+            id: order.id,
+            table_number: order.tables?.table_number || 'Unknown',
+            unique_code: order.unique_code,
+            created_at: order.created_at,
+            order_items: order.order_items || []
+          };
+          
+          // Print the order summary
+          printOrderSummary(printableOrder);
+        }
+      }
+      
       await apiService.updateOrderStatus(orderId, status);
       // Orders will be updated through real-time subscription
     } catch (error) {
       console.error('Failed to update order status:', error);
     }
+  };
+
+  const handlePrintPreview = (order: Order) => {
+    const printableOrder = {
+      id: order.id,
+      table_number: order.tables?.table_number || 'Unknown',
+      unique_code: order.unique_code,
+      created_at: order.created_at,
+      order_items: order.order_items || []
+    };
+    
+    showPrintPreview(printableOrder);
   };
 
   const getStatusIcon = (status: OrderStatus) => {
@@ -174,12 +204,26 @@ export const KitchenDashboard: React.FC = () => {
 
                 {/* Status Action */}
                 {getNextStatus(order.status) && (
-                  <button
-                    onClick={() => updateOrderStatus(order.id, getNextStatus(order.status)!)}
-                    className="w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition-colors font-medium"
-                  >
-                    Mark as {getNextStatus(order.status)}
-                  </button>
+                  <div className="space-y-2">
+                    <button
+                      onClick={() => updateOrderStatus(order.id, getNextStatus(order.status)!)}
+                      className="w-full bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 transition-colors font-medium"
+                    >
+                      Mark as {getNextStatus(order.status)}
+                      {getNextStatus(order.status) === 'Preparing' && (
+                        <span className="ml-2">🖨️</span>
+                      )}
+                    </button>
+                    
+                    {/* Print Preview Button */}
+                    <button
+                      onClick={() => handlePrintPreview(order)}
+                      className="w-full bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 transition-colors font-medium flex items-center justify-center gap-2"
+                    >
+                      <Printer className="w-4 h-4" />
+                      Preview Print
+                    </button>
+                  </div>
                 )}
 
                 {order.status === 'Served' && (
