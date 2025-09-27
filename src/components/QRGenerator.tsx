@@ -47,18 +47,9 @@ export const QRGenerator: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8">
-      <div className="max-w-2xl mx-auto px-4">
+    <div className="min-h-screen bg-gray-100">
+      <div className="max-w-2xl mx-auto px-4 py-8">
         <div className="bg-white rounded-xl shadow-lg p-8">
-          <div className="text-center mb-8">
-            <QrCode className="w-12 h-12 text-orange-500 mx-auto mb-4" />
-            <h1 className="text-2xl font-bold text-gray-900">
-              QR Code Generator
-            </h1>
-            <p className="text-gray-600">
-              Generate QR codes for restaurant tables
-            </p>
-          </div>
 
           <div className="space-y-6">
             <div>

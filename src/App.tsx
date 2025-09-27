@@ -3,6 +3,7 @@ import { HomeScreen } from './components/HomeScreen';
 import { TableLogin } from './components/TableLogin';
 import { CodeEntry } from './components/CodeEntry';
 import { AdminLogin } from './components/AdminLogin';
+import { AdminNavigation } from './components/AdminNavigation';
 import { Menu } from './components/Menu';
 import { KitchenDashboard } from './components/KitchenDashboard';
 import { QRGenerator } from './components/QRGenerator';
@@ -101,6 +102,14 @@ function App() {
     setMode('home');
     setPendingAdminMode(null);
     setAdminLoginError('');
+  };
+
+  const handleAdminNavigate = (page: 'kitchen' | 'qr-generator' | 'admin') => {
+    setMode(page);
+  };
+
+  const handleAdminHome = () => {
+    setMode('home');
   };
 
   const handleTableLogin = async (tableNumber: string, mobileNumber: string) => {
@@ -235,20 +244,12 @@ function App() {
   if (mode === 'kitchen') {
     return (
       <div>
-        <div className="fixed top-4 right-4 z-50 flex gap-2">
-          <button
-            onClick={handleAdminLogout}
-            className="bg-red-100 text-red-700 border rounded-lg px-3 py-2 text-sm shadow hover:bg-red-200 transition-colors"
-          >
-            Logout
-          </button>
-          <button
-            onClick={() => setMode('home')}
-            className="bg-white border rounded-lg px-3 py-2 text-sm shadow hover:bg-gray-50 transition-colors"
-          >
-            ← Home
-          </button>
-        </div>
+        <AdminNavigation
+          currentPage="kitchen"
+          onNavigate={handleAdminNavigate}
+          onLogout={handleAdminLogout}
+          onHome={handleAdminHome}
+        />
         <KitchenDashboard />
       </div>
     );
@@ -257,20 +258,12 @@ function App() {
   if (mode === 'qr-generator') {
     return (
       <div>
-        <div className="fixed top-4 right-4 z-50 flex gap-2">
-          <button
-            onClick={handleAdminLogout}
-            className="bg-red-100 text-red-700 border rounded-lg px-3 py-2 text-sm shadow hover:bg-red-200 transition-colors"
-          >
-            Logout
-          </button>
-          <button
-            onClick={() => setMode('home')}
-            className="bg-white border rounded-lg px-3 py-2 text-sm shadow hover:bg-gray-50 transition-colors"
-          >
-            ← Home
-          </button>
-        </div>
+        <AdminNavigation
+          currentPage="qr-generator"
+          onNavigate={handleAdminNavigate}
+          onLogout={handleAdminLogout}
+          onHome={handleAdminHome}
+        />
         <QRGenerator />
       </div>
     );
@@ -279,20 +272,12 @@ function App() {
   if (mode === 'admin') {
     return (
       <div>
-        <div className="fixed top-4 right-4 z-50 flex gap-2">
-          <button
-            onClick={handleAdminLogout}
-            className="bg-red-100 text-red-700 border rounded-lg px-3 py-2 text-sm shadow hover:bg-red-200 transition-colors"
-          >
-            Logout
-          </button>
-          <button
-            onClick={() => setMode('home')}
-            className="bg-white border rounded-lg px-3 py-2 text-sm shadow hover:bg-gray-50 transition-colors"
-          >
-            ← Home
-          </button>
-        </div>
+        <AdminNavigation
+          currentPage="admin"
+          onNavigate={handleAdminNavigate}
+          onLogout={handleAdminLogout}
+          onHome={handleAdminHome}
+        />
         <AdminPanel />
       </div>
     );

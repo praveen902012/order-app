@@ -106,9 +106,10 @@ export const KitchenDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <div className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-6">
+      {/* Orders Grid */}
+      <div className="max-w-7xl mx-auto px-4 py-6 pt-8">
+        {/* Header */}
+        <div className="mb-6">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Kitchen Dashboard</h1>
@@ -120,10 +121,7 @@ export const KitchenDashboard: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Orders Grid */}
-      <div className="max-w-7xl mx-auto px-4 py-6">
         {orders.length === 0 ? (
           <div className="text-center py-12">
             <Utensils className="w-12 h-12 text-gray-400 mx-auto mb-4" />
