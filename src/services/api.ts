@@ -31,9 +31,9 @@ class ApiService {
     order: Order;
     uniqueCode: string;
   }> {
-    return this.request('/api/tables/login', {
+    return this.request('/api/orders/initialize', {
       method: 'POST',
-      body: JSON.stringify({ table_number: tableNumber, mobile_number: mobileNumber }),
+      body: JSON.stringify({ tableNumber, mobileNumber }),
     });
   }
 
