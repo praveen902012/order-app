@@ -774,12 +774,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
                                 errorDiv.className = 'w-16 h-16 bg-red-100 rounded-lg border border-red-200 flex items-center justify-center';
                                 errorDiv.innerHTML = '<span class="text-red-400 text-xs">Error</span>';
                                 target.style.display = 'none';
-                                // Show error message
-                                const errorDiv = document.createElement('div');
-                                errorDiv.className = 'w-24 h-24 bg-red-100 rounded-lg border border-gray-300 flex items-center justify-center';
-                                errorDiv.innerHTML = '<span class="text-red-400 text-xs">Error</span>';
-                                target.parentElement?.replaceChild(errorDiv, target);
-                              }}
                             />
                           </div>
                         )}
