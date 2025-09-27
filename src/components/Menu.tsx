@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Minus, ShoppingCart, Share2, Copy, Trash2 } from 'lucide-react';
+import { Plus, Minus, ShoppingCart, Share2, Copy, Trash2, RefreshCw, Clock, CheckCircle, Utensils, Truck } from 'lucide-react';
 import { MenuItem, CartItem, Order } from '../types/database';
 import { apiService } from '../services/api';
 
@@ -19,10 +19,21 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
   const [showOrderCode, setShowOrderCode] = useState(false);
   const [refreshingOrder, setRefreshingOrder] = useState(false);
   const [showOrderHistory, setShowOrderHistory] = useState(false);
+  const [orderStatusPolling, setOrderStatusPolling] = useState<NodeJS.Timeout | null>(null);
+  const [showOrderStatus, setShowOrderStatus] = useState(false);
 
   useEffect(() => {
     loadMenu();
     loadExistingOrderItems();
+    
+    // Start polling for order status updates
+    startOrderStatusPolling();
+    
+    return () => {
+      if (orderStatusPolling) {
+        clearInterval(orderStatusPolling);
+      }
+    };
   }, []);
 
   const loadMenu = async () => {
@@ -61,6 +72,19 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
     } catch (error) {
       console.error('Failed to load existing order items:', error);
     }
+  };
+
+  const startOrderStatusPolling = () => {
+    // Poll every 10 seconds for order status updates
+    const interval = setInterval(async () => {
+      try {
+        await loadExistingOrderItems();
+      } catch (error) {
+        console.error('Failed to poll order status:', error);
+      }
+    }, 10000);
+    
+    setOrderStatusPolling(interval);
   };
 
   const addToCart = (item: MenuItem) => {
@@ -131,6 +155,11 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
       // Refresh existing order items to show the newly placed items
       await loadExistingOrderItems();
       
+      // Show order status after first order
+      if (existingOrderItems.length === 0) {
+        setShowOrderStatus(true);
+      }
+      
       if (createNewOrder) {
         alert('Additional order placed successfully! Kitchen will receive a new ticket.');
       } else {
@@ -182,6 +211,50 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
     }
   };
 
+  const getOrderStatusIcon = (status: string) => {
+    switch (status) {
+      case 'Pending':
+        return <Clock className="w-4 h-4 text-yellow-500" />;
+      case 'Preparing':
+        return <Utensils className="w-4 h-4 text-blue-500" />;
+      case 'Ready':
+        return <CheckCircle className="w-4 h-4 text-green-500" />;
+      case 'Served':
+        return <Truck className="w-4 h-4 text-gray-500" />;
+      default:
+        return <Clock className="w-4 h-4 text-gray-400" />;
+    }
+  };
+
+  const getOrderStatusColor = (status: string) => {
+    switch (status) {
+      case 'Pending':
+        return 'bg-yellow-50 border-yellow-200 text-yellow-800';
+      case 'Preparing':
+        return 'bg-blue-50 border-blue-200 text-blue-800';
+      case 'Ready':
+        return 'bg-green-50 border-green-200 text-green-800';
+      case 'Served':
+        return 'bg-gray-50 border-gray-200 text-gray-800';
+      default:
+        return 'bg-gray-50 border-gray-200 text-gray-800';
+    }
+  };
+
+  const getCurrentOrdersByStatus = () => {
+    const ordersByStatus: Record<string, any[]> = {};
+    
+    allTableItems.forEach(item => {
+      const status = item.order_status || 'Unknown';
+      if (!ordersByStatus[status]) {
+        ordersByStatus[status] = [];
+      }
+      ordersByStatus[status].push(item);
+    });
+    
+    return ordersByStatus;
+  };
+
   const categorizeItems = () => {
     const categories = ['Starters', 'Mains', 'Drinks', 'Desserts'];
     return categories.map(category => ({
@@ -222,10 +295,17 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
                   onClick={() => setShowOrderHistory(true)}
                   className="flex items-center gap-2 bg-purple-100 text-purple-700 px-3 py-2 rounded-lg hover:bg-purple-200 transition-colors"
                 >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+                  <Clock className="w-4 h-4" />
                   History
+                </button>
+              )}
+              {allTableItems.length > 0 && (
+                <button
+                  onClick={() => setShowOrderStatus(true)}
+                  className="flex items-center gap-2 bg-green-100 text-green-700 px-3 py-2 rounded-lg hover:bg-green-200 transition-colors"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  Status
                 </button>
               )}
               <button
@@ -236,9 +316,7 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
                 {refreshingOrder ? (
                   <div className="animate-spin w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full" />
                 ) : (
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
+                  <RefreshCw className="w-4 h-4" />
                 )}
                 Refresh
               </button>
@@ -331,6 +409,23 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
       {(cart.length > 0 || allTableItems.length > 0) && (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
           <div className="max-w-4xl mx-auto">
+            {/* Order Status Indicator */}
+            {allTableItems.length > 0 && (
+              <div className="mb-3 p-2 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                    <span className="text-blue-700 font-medium">Active Orders</span>
+                  </div>
+                  <button
+                    onClick={() => setShowOrderStatus(true)}
+                    className="text-blue-600 hover:text-blue-800 font-medium"
+                  >
+                    View Status →
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <ShoppingCart className="w-5 h-5 text-gray-600" />
@@ -363,10 +458,12 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
               </button>
               <button
                 onClick={placeOrder}
-                disabled={placingOrder}
+                disabled={placingOrder || cart.length === 0}
                 className="flex-1 bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 disabled:bg-orange-300 transition-colors font-medium disabled:cursor-not-allowed"
               >
-                {placingOrder ? 'Placing...' : 'Place Order'}
+                {placingOrder ? 'Placing...' : 
+                 cart.length === 0 ? 'Add Items' : 
+                 allTableItems.length > 0 ? 'Add to Order' : 'Place Order'}
               </button>
             </div>
           </div>
@@ -664,6 +761,98 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
         </div>
       )}
 
+      {/* Order Status Modal */}
+      {showOrderStatus && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-lg max-h-[80vh] flex flex-col">
+            <div className="p-6 border-b">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Order Status - Table {order.tables?.table_number}</h3>
+                <button
+                  onClick={() => setShowOrderStatus(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  ×
+                </button>
+              </div>
+              <p className="text-sm text-gray-500 mt-1">
+                Live updates • Last refreshed: {new Date().toLocaleTimeString()}
+              </p>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-6">
+              {allTableItems.length === 0 ? (
+                <div className="text-center py-8">
+                  <ShoppingCart className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500">No orders placed yet</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {Object.entries(getCurrentOrdersByStatus()).map(([status, items]) => (
+                    <div key={status} className={`border-2 rounded-lg p-4 ${getOrderStatusColor(status)}`}>
+                      <div className="flex items-center gap-2 mb-3">
+                        {getOrderStatusIcon(status)}
+                        <h4 className="font-semibold capitalize">{status}</h4>
+                        <span className="text-sm opacity-75">({items.length} items)</span>
+                      </div>
+                      <div className="space-y-2">
+                        {items.map((item, index) => (
+                          <div key={`status-${item.id}-${index}`} className="flex justify-between items-center py-2 border-b border-current border-opacity-20 last:border-b-0">
+                            <div className="flex-1">
+                              <h5 className="font-medium">{item.name}</h5>
+                              <p className="text-sm opacity-75">${item.price.toFixed(2)} each</p>
+                            </div>
+                            <div className="text-right">
+                              <span className="font-medium">×{item.quantity}</span>
+                              <p className="text-sm opacity-75">${(item.price * item.quantity).toFixed(2)}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-3 pt-3 border-t border-current border-opacity-20">
+                        <div className="flex justify-between items-center font-medium">
+                          <span>Subtotal:</span>
+                          <span>${items.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <div className="p-6 border-t">
+              <div className="flex justify-between items-center mb-4">
+                <span className="text-lg font-semibold">Total Order Value:</span>
+                <span className="text-xl font-bold text-gray-900">
+                  ${getExistingOrderTotal().toFixed(2)}
+                </span>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={refreshOrder}
+                  disabled={refreshingOrder}
+                  className="flex-1 bg-blue-100 text-blue-700 py-3 rounded-lg hover:bg-blue-200 transition-colors font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {refreshingOrder ? (
+                    <div className="animate-spin w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4" />
+                  )}
+                  Refresh Status
+                </button>
+                <button
+                  onClick={() => setShowOrderStatus(false)}
+                  className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                >
+                  Continue Ordering
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Order History Modal */}
       {showOrderHistory && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -683,9 +872,7 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
             <div className="flex-1 overflow-y-auto p-6">
               {allTableItems.length === 0 ? (
                 <div className="text-center py-8">
-                  <svg className="w-12 h-12 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
+                  <Clock className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                   <p className="text-gray-500">No order history</p>
                 </div>
               ) : (
