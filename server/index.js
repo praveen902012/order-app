@@ -109,6 +109,8 @@ const initializeSampleData = () => {
       ['Caesar Salad', 'Starters', 12.99, 'Fresh romaine lettuce, parmesan, croutons', 1],
       ['Chicken Wings', 'Starters', 14.99, 'Spicy buffalo wings with blue cheese dip', 1],
       ['Bruschetta', 'Starters', 10.99, 'Toasted bread with tomato, basil, and mozzarella', 1],
+      ['Mozzarella Sticks', 'Starters', 9.99, 'Golden fried mozzarella with marinara sauce', 1],
+      ['Onion Rings', 'Starters', 7.99, 'Crispy beer-battered onion rings', 1],
       
       // Mains
       ['Margherita Pizza', 'Mains', 18.99, 'Classic tomato sauce, mozzarella, and basil', 1],
@@ -116,6 +118,9 @@ const initializeSampleData = () => {
       ['Chicken Parmesan', 'Mains', 22.99, 'Breaded chicken breast with marinara and cheese', 1],
       ['Beef Burger', 'Mains', 19.99, 'Angus beef with lettuce, tomato, and fries', 1],
       ['Pasta Carbonara', 'Mains', 17.99, 'Creamy pasta with bacon and parmesan', 1],
+      ['BBQ Ribs', 'Mains', 24.99, 'Slow-cooked ribs with BBQ sauce and coleslaw', 1],
+      ['Fish and Chips', 'Mains', 16.99, 'Beer-battered cod with crispy fries', 1],
+      ['Vegetarian Pasta', 'Mains', 15.99, 'Penne with roasted vegetables and pesto', 1],
       
       // Drinks
       ['Coca Cola', 'Drinks', 3.99, 'Classic soft drink', 1],
@@ -123,16 +128,98 @@ const initializeSampleData = () => {
       ['Coffee', 'Drinks', 2.99, 'Premium roasted coffee', 1],
       ['Beer', 'Drinks', 5.99, 'Ice cold draft beer', 1],
       ['House Wine', 'Drinks', 7.99, 'Red or white wine by the glass', 1],
+      ['Iced Tea', 'Drinks', 2.99, 'Refreshing iced tea with lemon', 1],
+      ['Milkshake', 'Drinks', 5.99, 'Vanilla, chocolate, or strawberry milkshake', 1],
+      ['Sparkling Water', 'Drinks', 2.49, 'Premium sparkling water', 1],
       
       // Desserts
       ['Chocolate Cake', 'Desserts', 8.99, 'Rich chocolate cake with vanilla ice cream', 1],
       ['Tiramisu', 'Desserts', 9.99, 'Classic Italian dessert with coffee and mascarpone', 1],
-      ['Ice Cream', 'Desserts', 6.99, 'Vanilla, chocolate, or strawberry', 1]
+      ['Ice Cream', 'Desserts', 6.99, 'Vanilla, chocolate, or strawberry', 1],
+      ['Cheesecake', 'Desserts', 7.99, 'New York style cheesecake with berry sauce', 1],
+      ['Apple Pie', 'Desserts', 6.99, 'Homemade apple pie with cinnamon ice cream', 1]
     ];
 
     menuItems.forEach(item => {
       insertMenuItem.run(...item);
     });
+
+    // Add dummy users for testing
+    const insertUser = db.prepare('INSERT INTO users (mobile_number) VALUES (?)');
+    const testUsers = [
+      '+1234567890',
+      '+1987654321',
+      '+1555123456',
+      '+1444555666',
+      '+1777888999'
+    ];
+    
+    testUsers.forEach(mobile => {
+      insertUser.run(mobile);
+    });
+
+    // Add some dummy orders for testing
+    const tables = db.prepare('SELECT * FROM tables ORDER BY table_number LIMIT 5').all();
+    const menuItemsData = db.prepare('SELECT * FROM menu').all();
+    
+    if (tables.length > 0 && menuItemsData.length > 0) {
+      // Lock some tables and create orders
+      const updateTable = db.prepare('UPDATE tables SET locked = 1, unique_code = ? WHERE id = ?');
+      const insertOrder = db.prepare('INSERT INTO orders (table_id, unique_code, status) VALUES (?, ?, ?)');
+      const insertOrderItem = db.prepare('INSERT INTO order_items (order_id, menu_id, quantity) VALUES (?, ?, ?)');
+      
+      // Order 1 - Table T01 (Pending)
+      const code1 = generateUniqueCode();
+      updateTable.run(code1, tables[0].id);
+      const order1Result = insertOrder.run(tables[0].id, code1, 'Pending');
+      const order1Id = db.prepare('SELECT id FROM orders WHERE rowid = ?').get(order1Result.lastInsertRowid).id;
+      
+      // Add items to order 1
+      insertOrderItem.run(order1Id, menuItemsData[0].id, 2); // Garlic Bread x2
+      insertOrderItem.run(order1Id, menuItemsData[5].id, 1); // Margherita Pizza x1
+      insertOrderItem.run(order1Id, menuItemsData[10].id, 3); // Coca Cola x3
+      
+      // Order 2 - Table T02 (Preparing)
+      const code2 = generateUniqueCode();
+      updateTable.run(code2, tables[1].id);
+      const order2Result = insertOrder.run(tables[1].id, code2, 'Preparing');
+      const order2Id = db.prepare('SELECT id FROM orders WHERE rowid = ?').get(order2Result.lastInsertRowid).id;
+      
+      // Add items to order 2
+      insertOrderItem.run(order2Id, menuItemsData[8].id, 2); // Beef Burger x2
+      insertOrderItem.run(order2Id, menuItemsData[1].id, 1); // Caesar Salad x1
+      insertOrderItem.run(order2Id, menuItemsData[13].id, 2); // Beer x2
+      insertOrderItem.run(order2Id, menuItemsData[15].id, 1); // Chocolate Cake x1
+      
+      // Order 3 - Table T03 (Ready)
+      const code3 = generateUniqueCode();
+      updateTable.run(code3, tables[2].id);
+      const order3Result = insertOrder.run(tables[2].id, code3, 'Ready');
+      const order3Id = db.prepare('SELECT id FROM orders WHERE rowid = ?').get(order3Result.lastInsertRowid).id;
+      
+      // Add items to order 3
+      insertOrderItem.run(order3Id, menuItemsData[7].id, 1); // Grilled Salmon x1
+      insertOrderItem.run(order3Id, menuItemsData[2].id, 1); // Chicken Wings x1
+      insertOrderItem.run(order3Id, menuItemsData[14].id, 1); // House Wine x1
+      insertOrderItem.run(order3Id, menuItemsData[16].id, 2); // Tiramisu x2
+      
+      // Order 4 - Table T04 (Pending - Large order)
+      const code4 = generateUniqueCode();
+      updateTable.run(code4, tables[3].id);
+      const order4Result = insertOrder.run(tables[3].id, code4, 'Pending');
+      const order4Id = db.prepare('SELECT id FROM orders WHERE rowid = ?').get(order4Result.lastInsertRowid).id;
+      
+      // Add many items to order 4 (family order)
+      insertOrderItem.run(order4Id, menuItemsData[0].id, 1); // Garlic Bread x1
+      insertOrderItem.run(order4Id, menuItemsData[4].id, 1); // Mozzarella Sticks x1
+      insertOrderItem.run(order4Id, menuItemsData[6].id, 2); // Margherita Pizza x2
+      insertOrderItem.run(order4Id, menuItemsData[8].id, 1); // Beef Burger x1
+      insertOrderItem.run(order4Id, menuItemsData[11].id, 1); // BBQ Ribs x1
+      insertOrderItem.run(order4Id, menuItemsData[10].id, 4); // Coca Cola x4
+      insertOrderItem.run(order4Id, menuItemsData[18].id, 2); // Milkshake x2
+      insertOrderItem.run(order4Id, menuItemsData[15].id, 1); // Chocolate Cake x1
+      insertOrderItem.run(order4Id, menuItemsData[20].id, 1); // Cheesecake x1
+    }
   }
 };
 
