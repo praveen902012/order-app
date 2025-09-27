@@ -445,9 +445,26 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
                                     ...editingMenuItem,
                                     image_url: e.target.value || null
                                   })}
-                                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                                   placeholder="Image URL (optional)"
                                 />
+                                {editingMenuItem.image_url && (
+                                  <div className="mt-2">
+                                    <img
+                                      src={editingMenuItem.image_url}
+                                      alt="Preview"
+                                      className="w-16 h-16 object-cover rounded-lg border border-gray-200"
+                                      onError={(e) => {
+                                        const target = e.target as HTMLImageElement;
+                                        if (target.src !== 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400') {
+                                          target.src = 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400';
+                                        } else {
+                                          target.style.display = 'none';
+                                        }
+                                      }}
+                                    />
+                                  </div>
+                                )}
                                 <select
                                   value={editingMenuItem.category}
                                   onChange={(e) => setEditingMenuItem({
