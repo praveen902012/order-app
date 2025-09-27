@@ -420,18 +420,26 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
             <div className="grid gap-4">
               {category.items.map(item => (
                 <div key={item.id} className="bg-white rounded-lg p-4 shadow-sm">
-                  <div className="flex gap-4 mb-2">
+                  <div className="flex gap-4 mb-4">
                     {item.image_url && (
                       <div className="flex-shrink-0">
                         <img
                           src={item.image_url}
                           alt={item.name}
-                          className="w-24 h-24 object-cover rounded-lg border border-gray-200"
+                          className="w-20 h-20 object-cover rounded-lg border border-gray-200"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
-                            target.src = 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=200';
+                            target.src = 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400';
+                            target.onerror = null; // Prevent infinite loop
                           }}
                         />
+                      </div>
+                    )}
+                    {!item.image_url && (
+                      <div className="flex-shrink-0">
+                        <div className="w-20 h-20 bg-gray-200 rounded-lg border border-gray-300 flex items-center justify-center">
+                          <span className="text-gray-400 text-xs">No Image</span>
+                        </div>
                       </div>
                     )}
                     <div className="flex-1">
