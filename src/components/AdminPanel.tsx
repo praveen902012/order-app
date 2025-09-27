@@ -537,15 +537,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
                                     onError={(e) => {
                                       const target = e.target as HTMLImageElement;
                                      target.style.display = 'none';
-                                     const placeholder = target.parentElement?.querySelector('.image-placeholder') as HTMLElement;
-                                     if (placeholder) {
-                                       placeholder.style.display = 'flex';
-                                     }
+                                      // Show placeholder by replacing with a div
+                                      const placeholder = document.createElement('div');
+                                      placeholder.className = 'w-20 h-20 bg-gray-200 rounded-lg border border-gray-300 flex items-center justify-center';
+                                      placeholder.innerHTML = '<span class="text-gray-400 text-xs text-center">Image Error</span>';
+                                      target.parentElement?.replaceChild(placeholder, target);
                                     }}
                                   />
-                                 <div className="image-placeholder w-20 h-20 bg-gray-200 rounded-lg border border-gray-300 flex items-center justify-center" style={{ display: 'none' }}>
-                                   <span className="text-gray-400 text-xs text-center">Image Error</span>
-                                 </div>
                                 ) : (
                                  <div className="w-20 h-20 bg-gray-200 rounded-lg border border-gray-300 flex items-center justify-center">
                                     <span className="text-gray-400 text-xs text-center">No Image</span>
@@ -639,12 +637,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
                                 className="w-full h-full object-cover rounded-lg border-2 border-red-200"
                                 onError={(e) => {
                                   const target = e.target as HTMLImageElement;
-                                  if (target.src !== 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400') {
-                                    target.src = 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400';
-                                  } else {
-                                    target.style.display = 'none';
-                                    target.nextElementSibling?.classList.remove('hidden');
-                                  }
+                                  target.style.display = 'none';
+                                  // Show placeholder by replacing with a div
+                                  const placeholder = document.createElement('div');
+                                  placeholder.className = 'w-full h-full bg-red-100 rounded-lg border-2 border-red-200 flex items-center justify-center';
+                                  placeholder.innerHTML = '<span class="text-red-400 text-xs text-center">Image Error</span>';
+                                  target.parentElement?.replaceChild(placeholder, target);
                                 }}
                               />
                             ) : (
@@ -652,9 +650,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
                                 <span className="text-red-400 text-xs text-center">No Image</span>
                               </div>
                             )}
-                            <div className="hidden w-full h-full bg-red-100 rounded-lg border-2 border-red-200 flex items-center justify-center">
-                              <span className="text-red-400 text-xs text-center">Image Error</span>
-                            </div>
                           </div>
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
@@ -773,11 +768,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
                               className="w-24 h-24 object-cover rounded-lg border border-gray-300"
                               onError={(e) => {
                                 const target = e.target as HTMLImageElement;
-                                if (target.src !== 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400') {
-                                  target.src = 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400';
-                                } else {
-                                  target.style.display = 'none';
-                                }
+                                target.style.display = 'none';
+                                // Show error message
+                                const errorDiv = document.createElement('div');
+                                errorDiv.className = 'w-16 h-16 bg-red-100 rounded-lg border border-red-200 flex items-center justify-center';
+                                errorDiv.innerHTML = '<span class="text-red-400 text-xs">Error</span>';
+                                target.style.display = 'none';
+                                // Show error message
+                                const errorDiv = document.createElement('div');
+                                errorDiv.className = 'w-24 h-24 bg-red-100 rounded-lg border border-gray-300 flex items-center justify-center';
+                                errorDiv.innerHTML = '<span class="text-red-400 text-xs">Error</span>';
+                                target.parentElement?.replaceChild(errorDiv, target);
                               }}
                             />
                           </div>
