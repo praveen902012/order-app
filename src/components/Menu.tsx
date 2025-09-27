@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Minus, ShoppingCart, Share2, Copy, Trash2, RefreshCw, Clock, CheckCircle, Utensils, Truck } from 'lucide-react';
+import { Plus, Minus, ShoppingCart, Share2, Copy, Trash2, RefreshCw, Clock, CircleCheck as CheckCircle, Utensils, Truck } from 'lucide-react';
 import { MenuItem, CartItem, Order } from '../types/database';
 import { apiService } from '../services/api';
 
@@ -409,23 +409,6 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
       {(cart.length > 0 || allTableItems.length > 0) && (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
           <div className="max-w-4xl mx-auto">
-            {/* Order Status Indicator */}
-            {allTableItems.length > 0 && (
-              <div className="mb-3 p-2 bg-blue-50 rounded-lg border border-blue-200">
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                    <span className="text-blue-700 font-medium">Active Orders</span>
-                  </div>
-                  <button
-                    onClick={() => setShowOrderStatus(true)}
-                    className="text-blue-600 hover:text-blue-800 font-medium"
-                  >
-                    View Status →
-                  </button>
-                </div>
-              </div>
-            )}
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <ShoppingCart className="w-5 h-5 text-gray-600" />
@@ -458,12 +441,10 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
               </button>
               <button
                 onClick={placeOrder}
-                disabled={placingOrder || cart.length === 0}
+                disabled={placingOrder}
                 className="flex-1 bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 disabled:bg-orange-300 transition-colors font-medium disabled:cursor-not-allowed"
               >
-                {placingOrder ? 'Placing...' : 
-                 cart.length === 0 ? 'Add Items' : 
-                 allTableItems.length > 0 ? 'Add to Order' : 'Place Order'}
+                {placingOrder ? 'Placing...' : 'Place Order'}
               </button>
             </div>
           </div>
