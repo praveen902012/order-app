@@ -21,6 +21,7 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
   const [showOrderHistory, setShowOrderHistory] = useState(false);
   const [orderStatusPolling, setOrderStatusPolling] = useState<NodeJS.Timeout | null>(null);
   const [showOrderStatus, setShowOrderStatus] = useState(false);
+  const [hasPlacedFirstOrder, setHasPlacedFirstOrder] = useState(false);
 
   useEffect(() => {
     loadMenu();
@@ -28,6 +29,11 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
     
     // Start polling for order status updates
     startOrderStatusPolling();
+    
+    // Check if user has existing orders (returning user)
+    if (existingOrderItems.length > 0 || allTableItems.length > 0) {
+      setHasPlacedFirstOrder(true);
+    }
     
     return () => {
       if (orderStatusPolling) {
@@ -155,8 +161,9 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
       // Refresh existing order items to show the newly placed items
       await loadExistingOrderItems();
       
-      // Show order status after first order
-      if (existingOrderItems.length === 0) {
+      // Show order status after first order and set session flag
+      if (!hasPlacedFirstOrder) {
+        setHasPlacedFirstOrder(true);
         setShowOrderStatus(true);
       }
       
@@ -293,42 +300,62 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
               {allTableItems.length > 0 && (
                 <button
                   onClick={() => setShowOrderHistory(true)}
-                  className="flex items-center gap-2 bg-purple-100 text-purple-700 px-3 py-2 rounded-lg hover:bg-purple-200 transition-colors"
+                  className="flex items-center gap-2 bg-purple-100 text-purple-700 px-3 py-2 rounded-lg hover:bg-purple-200 transition-colors text-sm"
                 >
                   <Clock className="w-4 h-4" />
-                  History
+                  <span className="hidden sm:inline">History</span>
                 </button>
               )}
               {allTableItems.length > 0 && (
                 <button
                   onClick={() => setShowOrderStatus(true)}
-                  className="flex items-center gap-2 bg-green-100 text-green-700 px-3 py-2 rounded-lg hover:bg-green-200 transition-colors"
+                  className="flex items-center gap-2 bg-green-100 text-green-700 px-3 py-2 rounded-lg hover:bg-green-200 transition-colors text-sm"
                 >
                   <CheckCircle className="w-4 h-4" />
-                  Status
+                  <span className="hidden sm:inline">Status</span>
                 </button>
               )}
               <button
                 onClick={refreshOrder}
                 disabled={refreshingOrder}
-                className="flex items-center gap-2 bg-blue-100 text-blue-700 px-3 py-2 rounded-lg hover:bg-blue-200 transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 bg-blue-100 text-blue-700 px-3 py-2 rounded-lg hover:bg-blue-200 transition-colors disabled:opacity-50 text-sm"
               >
                 {refreshingOrder ? (
                   <div className="animate-spin w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full" />
                 ) : (
                   <RefreshCw className="w-4 h-4" />
                 )}
-                Refresh
+                <span className="hidden sm:inline">Refresh</span>
               </button>
               <button
                 onClick={() => setShowOrderCode(true)}
-                className="flex items-center gap-2 bg-orange-100 text-orange-700 px-3 py-2 rounded-lg hover:bg-orange-200 transition-colors"
+                className="flex items-center gap-2 bg-orange-100 text-orange-700 px-3 py-2 rounded-lg hover:bg-orange-200 transition-colors text-sm"
               >
                 <Share2 className="w-4 h-4" />
-                Share
+                <span className="hidden sm:inline">Share</span>
               </button>
             </div>
           </div>
+          
+          {/* Active Order Status Banner */}
+          {hasPlacedFirstOrder && allTableItems.length > 0 && (
+            <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                  <span className="text-sm font-medium text-blue-800">
+                    Active Orders: {Object.keys(getCurrentOrdersByStatus()).length} tickets
+                  </span>
+                </div>
+                <button
+                  onClick={() => setShowOrderStatus(true)}
+                  className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  View Status →
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -444,7 +471,7 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
                 disabled={placingOrder}
                 className="flex-1 bg-orange-500 text-white py-2 rounded-lg hover:bg-orange-600 disabled:bg-orange-300 transition-colors font-medium disabled:cursor-not-allowed"
               >
-                {placingOrder ? 'Placing...' : 'Place Order'}
+                {placingOrder ? 'Placing...' : hasPlacedFirstOrder ? 'Add to Order' : 'Place Order'}
               </button>
             </div>
           </div>
@@ -593,10 +620,10 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
                     <button
                       onClick={placeOrder}
                       disabled={placingOrder}
-                      className="flex-1 bg-orange-500 text-white py-3 rounded-lg hover:bg-orange-600 disabled:bg-orange-300 transition-colors font-medium"
+                      className="flex-1 bg-orange-500 text-white py-3 rounded-lg hover:bg-orange-600 disabled:bg-orange-300 transition-colors font-medium disabled:cursor-not-allowed"
                     >
                       {placingOrder ? 'Placing...' : 
-                        allTableItems.length > 0 ? 
+                        hasPlacedFirstOrder ? 
                           `Add to Order ($${getCartTotal().toFixed(2)})` : 
                           `Place Order ($${getCartTotal().toFixed(2)})`
                       }
@@ -757,7 +784,7 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
                 </button>
               </div>
               <p className="text-sm text-gray-500 mt-1">
-                Live updates • Last refreshed: {new Date().toLocaleTimeString()}
+                🔴 Live updates • Last refreshed: {new Date().toLocaleTimeString()}
               </p>
             </div>
             
@@ -775,6 +802,12 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
                         {getOrderStatusIcon(status)}
                         <h4 className="font-semibold capitalize">{status}</h4>
                         <span className="text-sm opacity-75">({items.length} items)</span>
+                        {status === 'Preparing' && (
+                          <div className="ml-auto flex items-center gap-1">
+                            <div className="w-2 h-2 bg-current rounded-full animate-pulse"></div>
+                            <span className="text-xs">In Kitchen</span>
+                          </div>
+                        )}
                       </div>
                       <div className="space-y-2">
                         {items.map((item, index) => (
@@ -803,6 +836,12 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
             </div>
             
             <div className="p-6 border-t">
+              <div className="bg-gray-50 rounded-lg p-3 mb-4">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600">Order Summary:</span>
+                  <span className="font-medium">{allTableItems.reduce((sum, item) => sum + item.quantity, 0)} items total</span>
+                </div>
+              </div>
               <div className="flex justify-between items-center mb-4">
                 <span className="text-lg font-semibold">Total Order Value:</span>
                 <span className="text-xl font-bold text-gray-900">
