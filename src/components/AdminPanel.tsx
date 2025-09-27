@@ -26,6 +26,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
     category: 'Starters',
     price: '',
     description: '',
+    image_url: '',
     is_available: true
   });
 
@@ -145,6 +146,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
         category: menuForm.category,
         price: parseFloat(menuForm.price),
         description: menuForm.description || null,
+        image_url: menuForm.image_url || null,
         is_available: menuForm.is_available
       });
       
@@ -153,6 +155,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
         category: 'Starters',
         price: '',
         description: '',
+        image_url: '',
         is_available: true
       });
       setShowAddMenuItem(false);
@@ -170,6 +173,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
         category: item.category,
         price: item.price,
         description: item.description,
+        image_url: item.image_url,
         is_available: item.is_available
       });
       
@@ -434,6 +438,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
                                   className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                                   placeholder="Item name"
                                 />
+                                <input
+                                  type="url"
+                                  value={editingMenuItem.image_url || ''}
+                                  onChange={(e) => setEditingMenuItem({
+                                    ...editingMenuItem,
+                                    image_url: e.target.value
+                                  })}
+                                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                  placeholder="Image URL (optional)"
+                                />
                                 <select
                                   value={editingMenuItem.category}
                                   onChange={(e) => setEditingMenuItem({
@@ -501,6 +515,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
                             </div>
                           ) : (
                             <div className="flex justify-between items-start">
+                              {item.image_url && (
+                                <div className="w-20 h-20 mr-4 flex-shrink-0">
+                                  <img
+                                    src={item.image_url}
+                                    alt={item.name}
+                                    className="w-full h-full object-cover rounded-lg"
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement;
+                                      target.style.display = 'none';
+                                    }}
+                                  />
+                                </div>
+                              )}
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-1">
                                   <h4 className="font-medium text-gray-900">{item.name}</h4>
@@ -580,6 +607,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
                     {unavailableItems.map(item => (
                       <div key={item.id} className="border border-red-200 rounded-lg p-4 bg-red-50">
                         <div className="flex justify-between items-start">
+                          {item.image_url && (
+                            <div className="w-20 h-20 mr-4 flex-shrink-0">
+                              <img
+                                src={item.image_url}
+                                alt={item.name}
+                                className="w-full h-full object-cover rounded-lg border-2 border-red-200"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                }}
+                              />
+                            </div>
+                          )}
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
                               <h4 className="font-medium text-gray-900">{item.name}</h4>
@@ -674,6 +714,34 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
                           })}
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                         />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Image URL
+                        </label>
+                        <input
+                          type="url"
+                          value={editingMenuItem.image_url || ''}
+                          onChange={(e) => setEditingMenuItem({
+                            ...editingMenuItem,
+                            image_url: e.target.value
+                          })}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                          placeholder="https://example.com/image.jpg"
+                        />
+                        {editingMenuItem.image_url && (
+                          <div className="mt-2">
+                            <img
+                              src={editingMenuItem.image_url}
+                              alt="Preview"
+                              className="w-24 h-24 object-cover rounded-lg border"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                              }}
+                            />
+                          </div>
+                        )}
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -838,6 +906,31 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
                     ))}
                   </select>
                 </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Image URL
+                </label>
+                <input
+                  type="url"
+                  value={menuForm.image_url}
+                  onChange={(e) => setMenuForm({ ...menuForm, image_url: e.target.value })}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  placeholder="https://example.com/image.jpg (optional)"
+                />
+                {menuForm.image_url && (
+                  <div className="mt-2">
+                    <img
+                      src={menuForm.image_url}
+                      alt="Preview"
+                      className="w-24 h-24 object-cover rounded-lg border"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                      }}
+                    />
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
