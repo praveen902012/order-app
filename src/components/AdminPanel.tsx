@@ -443,7 +443,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
                                   value={editingMenuItem.image_url || ''}
                                   onChange={(e) => setEditingMenuItem({
                                     ...editingMenuItem,
-                                    image_url: e.target.value
+                                    image_url: e.target.value || null
                                   })}
                                   className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                                   placeholder="Image URL (optional)"
@@ -477,7 +477,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
                                   value={editingMenuItem.description || ''}
                                   onChange={(e) => setEditingMenuItem({
                                     ...editingMenuItem,
-                                    description: e.target.value
+                                    description: e.target.value || null
                                   })}
                                   className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                                   placeholder="Description"
@@ -724,7 +724,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
                           value={editingMenuItem.image_url || ''}
                           onChange={(e) => setEditingMenuItem({
                             ...editingMenuItem,
-                            image_url: e.target.value
+                            image_url: e.target.value || null
                           })}
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                           placeholder="https://example.com/image.jpg"

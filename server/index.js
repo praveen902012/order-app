@@ -342,11 +342,11 @@ app.put('/api/menu/:id', (req, res) => {
     }
     if (description !== undefined) {
       fields.push('description = ?');
-      values.push(description);
+      values.push(description || null);
     }
     if (image_url !== undefined) {
       fields.push('image_url = ?');
-      values.push(image_url);
+      values.push(image_url || null);
     }
     if (is_available !== undefined) {
       fields.push('is_available = ?');
