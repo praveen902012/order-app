@@ -1,5 +1,5 @@
 import React from 'react';
-import { Utensils, QrCode, Settings, LogOut, Home } from 'lucide-react';
+import { Utensils, QrCode, Settings, LogOut, Hop as Home } from 'lucide-react';
 
 interface AdminNavigationProps {
   currentPage: 'kitchen' | 'qr-generator' | 'admin';
