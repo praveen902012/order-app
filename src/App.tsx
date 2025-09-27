@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { HomeScreen } from './components/HomeScreen';
 import { TableLogin } from './components/TableLogin';
 import { CodeEntry } from './components/CodeEntry';
+import { AdminLogin } from './components/AdminLogin';
 import { Menu } from './components/Menu';
 import { KitchenDashboard } from './components/KitchenDashboard';
 import { QRGenerator } from './components/QRGenerator';
@@ -9,7 +10,7 @@ import { AdminPanel } from './components/AdminPanel';
 import { Order } from './types/database';
 import { apiService } from './services/api';
 
-type AppMode = 'home' | 'customer' | 'kitchen' | 'qr-generator' | 'admin';
+type AppMode = 'home' | 'customer' | 'kitchen' | 'qr-generator' | 'admin' | 'admin-login';
 type CustomerState = 'login' | 'code-entry' | 'menu';
 
 function App() {
@@ -18,6 +19,15 @@ function App() {
   const [currentOrder, setCurrentOrder] = useState<Order | null>(null);
   const [uniqueCode, setUniqueCode] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const [adminLoginError, setAdminLoginError] = useState<string>('');
+  const [pendingAdminMode, setPendingAdminMode] = useState<'kitchen' | 'qr-generator' | 'admin' | null>(null);
+
+  // Demo admin credentials
+  const ADMIN_CREDENTIALS = {
+    username: 'admin',
+    password: 'admin123'
+  };
 
   useEffect(() => {
     // Check URL parameters for initial routing
@@ -37,16 +47,60 @@ function App() {
     }
   }, []);
 
-  const handleModeSelect = (selectedMode: 'customer' | 'kitchen' | 'qr-generator' | 'join-order') => {
+  const handleModeSelect = (selectedMode: 'customer' | 'kitchen' | 'qr-generator' | 'join-order' | 'admin-login') => {
     if (selectedMode === 'join-order') {
       setMode('customer');
       setCustomerState('code-entry');
+    } else if (selectedMode === 'admin-login') {
+      // Determine which admin mode was requested based on URL or default to admin panel
+      const params = new URLSearchParams(window.location.search);
+      const kitchen = params.get('kitchen');
+      const qrgen = params.get('qr');
+      
+      if (kitchen === 'true') {
+        setPendingAdminMode('kitchen');
+      } else if (qrgen === 'true') {
+        setPendingAdminMode('qr-generator');
+      } else {
+        setPendingAdminMode('admin');
+      }
+      
+      if (isAdminAuthenticated) {
+        setMode(pendingAdminMode || 'admin');
+      } else {
+        setMode('admin-login');
+      }
     } else {
       setMode(selectedMode);
       if (selectedMode === 'customer') {
         setCustomerState('login');
       }
     }
+  };
+
+  const handleAdminLogin = async (username: string, password: string) => {
+    setLoading(true);
+    setAdminLoginError('');
+    
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
+      setIsAdminAuthenticated(true);
+      setMode(pendingAdminMode || 'admin');
+      setPendingAdminMode(null);
+    } else {
+      setAdminLoginError('Invalid username or password');
+    }
+    
+    setLoading(false);
+  };
+
+  const handleAdminLogout = () => {
+    setIsAdminAuthenticated(false);
+    setMode('home');
+    setPendingAdminMode(null);
+    setAdminLoginError('');
   };
 
   const handleTableLogin = async (tableNumber: string, mobileNumber: string) => {
@@ -86,6 +140,27 @@ function App() {
   // Home screen
   if (mode === 'home') {
     return <HomeScreen onModeSelect={handleModeSelect} />;
+  }
+
+  // Admin login screen
+  if (mode === 'admin-login') {
+    return (
+      <div>
+        <div className="fixed top-4 right-4 z-50">
+          <button
+            onClick={() => setMode('home')}
+            className="bg-white border rounded-lg px-3 py-2 text-sm shadow hover:bg-gray-50 transition-colors"
+          >
+            ← Home
+          </button>
+        </div>
+        <AdminLogin 
+          onLogin={handleAdminLogin} 
+          loading={loading}
+          error={adminLoginError}
+        />
+      </div>
+    );
   }
 
   // Customer login screen
@@ -160,7 +235,13 @@ function App() {
   if (mode === 'kitchen') {
     return (
       <div>
-        <div className="fixed top-4 right-4 z-50">
+        <div className="fixed top-4 right-4 z-50 flex gap-2">
+          <button
+            onClick={handleAdminLogout}
+            className="bg-red-100 text-red-700 border rounded-lg px-3 py-2 text-sm shadow hover:bg-red-200 transition-colors"
+          >
+            Logout
+          </button>
           <button
             onClick={() => setMode('home')}
             className="bg-white border rounded-lg px-3 py-2 text-sm shadow hover:bg-gray-50 transition-colors"
@@ -176,7 +257,13 @@ function App() {
   if (mode === 'qr-generator') {
     return (
       <div>
-        <div className="fixed top-4 right-4 z-50">
+        <div className="fixed top-4 right-4 z-50 flex gap-2">
+          <button
+            onClick={handleAdminLogout}
+            className="bg-red-100 text-red-700 border rounded-lg px-3 py-2 text-sm shadow hover:bg-red-200 transition-colors"
+          >
+            Logout
+          </button>
           <button
             onClick={() => setMode('home')}
             className="bg-white border rounded-lg px-3 py-2 text-sm shadow hover:bg-gray-50 transition-colors"
@@ -192,7 +279,13 @@ function App() {
   if (mode === 'admin') {
     return (
       <div>
-        <div className="fixed top-4 right-4 z-50">
+        <div className="fixed top-4 right-4 z-50 flex gap-2">
+          <button
+            onClick={handleAdminLogout}
+            className="bg-red-100 text-red-700 border rounded-lg px-3 py-2 text-sm shadow hover:bg-red-200 transition-colors"
+          >
+            Logout
+          </button>
           <button
             onClick={() => setMode('home')}
             className="bg-white border rounded-lg px-3 py-2 text-sm shadow hover:bg-gray-50 transition-colors"

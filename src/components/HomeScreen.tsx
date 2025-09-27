@@ -2,7 +2,7 @@ import React from 'react';
 import { QrCode, Utensils, Settings, Users, Smartphone } from 'lucide-react';
 
 interface HomeScreenProps {
-  onModeSelect: (mode: 'customer' | 'kitchen' | 'qr-generator' | 'join-order') => void;
+  onModeSelect: (mode: 'customer' | 'kitchen' | 'qr-generator' | 'join-order' | 'admin-login') => void;
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({ onModeSelect }) => {
@@ -24,25 +24,25 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onModeSelect }) => {
       textColor: 'text-white'
     },
     {
-      id: 'kitchen',
+      id: 'admin-login',
       title: 'Kitchen Dashboard',
-      description: 'Real-time order management for kitchen staff',
+      description: 'Real-time order management for kitchen staff (Admin Only)',
       icon: <Utensils className="w-8 h-8" />,
       color: 'bg-green-500 hover:bg-green-600',
       textColor: 'text-white'
     },
     {
-      id: 'qr-generator',
+      id: 'admin-login',
       title: 'QR Code Generator',
-      description: 'Generate QR codes for restaurant tables',
+      description: 'Generate QR codes for restaurant tables (Admin Only)',
       icon: <QrCode className="w-8 h-8" />,
       color: 'bg-purple-500 hover:bg-purple-600',
       textColor: 'text-white'
     },
     {
-      id: 'admin',
+      id: 'admin-login',
       title: 'Admin Panel',
-      description: 'Manage tables and menu items',
+      description: 'Manage tables and menu items (Admin Only)',
       icon: <Settings className="w-8 h-8" />,
       color: 'bg-indigo-500 hover:bg-indigo-600',
       textColor: 'text-white'
@@ -74,7 +74,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onModeSelect }) => {
           {menuItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => onModeSelect(item.id as any)}
+              onClick={() => {
+                if (item.id === 'admin-login') {
+                  onModeSelect('admin-login');
+                } else {
+                  onModeSelect(item.id as any);
+                }
+              }}
               className={`${item.color} ${item.textColor} p-8 rounded-2xl shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 text-left group`}
             >
               <div className="flex items-start gap-4">
