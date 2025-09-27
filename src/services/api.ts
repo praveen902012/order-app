@@ -52,7 +52,7 @@ class ApiService {
   }
 
   async getAllMenuItems(): Promise<MenuItem[]> {
-    return this.request<MenuItem[]>('/api/menu');
+    return this.request<MenuItem[]>('/api/menu/all');
   }
 
   async addMenuItem(item: {

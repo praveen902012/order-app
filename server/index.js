@@ -299,7 +299,7 @@ app.get('/api/menu', (req, res) => {
 
 app.get('/api/menu/all', (req, res) => {
   try {
-    const stmt = db.prepare('SELECT * FROM menu ORDER BY category');
+    const stmt = db.prepare('SELECT * FROM menu ORDER BY category, name');
     const menu = stmt.all();
     res.json(menu);
   } catch (error) {
