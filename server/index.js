@@ -109,7 +109,7 @@ const initializeSampleData = () => {
       ['Garlic Bread', 'Starters', 8.99, 'Crispy bread with garlic butter and herbs', 'https://images.pexels.com/photos/4518843/pexels-photo-4518843.jpeg?auto=compress&cs=tinysrgb&w=400', 1],
       ['Caesar Salad', 'Starters', 12.99, 'Fresh romaine lettuce, parmesan, croutons', 'https://images.pexels.com/photos/2097090/pexels-photo-2097090.jpeg?auto=compress&cs=tinysrgb&w=400', 1],
       ['Chicken Wings', 'Starters', 14.99, 'Spicy buffalo wings with blue cheese dip', 'https://images.pexels.com/photos/60616/fried-chicken-chicken-fried-crunchy-60616.jpeg?auto=compress&cs=tinysrgb&w=400', 1],
-      ['Bruschetta', 'Starters', 10.99, 'Toasted bread with tomato, basil, and mozzarella', 'https://images.pexels.com/photos/5792329/pexels-photo-5792329.jpeg?auto=compress&cs=tinysrgb&w=400', 1],
+      ['Bruschetta', 'Starters', 10.99, 'Toasted bread with tomato, basil, and mozzarella', 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400', 1],
       ['Mozzarella Sticks', 'Starters', 9.99, 'Golden fried mozzarella with marinara sauce', 'https://images.pexels.com/photos/4518843/pexels-photo-4518843.jpeg?auto=compress&cs=tinysrgb&w=400', 1],
       ['Onion Rings', 'Starters', 7.99, 'Crispy beer-battered onion rings', 'https://images.pexels.com/photos/209540/pexels-photo-209540.jpeg?auto=compress&cs=tinysrgb&w=400', 1],
       
