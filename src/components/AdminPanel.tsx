@@ -763,29 +763,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
                                 const target = e.target as HTMLImageElement;
                                 if (target.src !== 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400') {
                                   target.src = 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400';
-                        {editingMenuItem.image_url && (
-                          <div className="mt-2">
-                            <img
-                              src={editingMenuItem.image_url}
-                              alt="Preview"
-                              className="w-24 h-24 object-cover rounded-lg border border-gray-300"
-                              onError={(e) => {
-                                const target = e.target as HTMLImageElement;
-                                if (target.src !== 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400') {
-                                  target.src = 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=400';
                                 } else {
                                   target.style.display = 'none';
-                                }
-                              }}
-                            />
-                          </div>
-                        )}
-                                } else {
-                                  target.style.display = 'none';
-                                  const errorDiv = document.createElement('div');
-                                  errorDiv.className = 'w-24 h-24 bg-gray-200 rounded-lg border border-gray-300 flex items-center justify-center';
-                                  errorDiv.innerHTML = '<span class="text-gray-400 text-xs">Invalid URL</span>';
-                                  target.parentNode?.appendChild(errorDiv);
                                 }
                               }}
                             />
