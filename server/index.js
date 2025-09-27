@@ -390,27 +390,45 @@ app.post('/api/orders/initialize', (req, res) => {
     // Check if table is locked with existing order
     if (table.locked && table.unique_code) {
       const existingOrderStmt = db.prepare(`
-        SELECT o.*, t.table_number
+        SELECT o.*, t.table_number, t.unique_code
         FROM orders o
         LEFT JOIN tables t ON o.table_id = t.id
         WHERE o.table_id = ? AND o.status != 'Served'
         ORDER BY o.created_at DESC
-        LIMIT 1
       `);
-      const existingOrder = existingOrderStmt.get(table.id);
+      const existingOrders = existingOrderStmt.all(table.id);
       
-      if (existingOrder) {
-        // Get order items
+      if (existingOrders.length > 0) {
+        // Get all order items for all active orders at this table
+        const allOrderItems = [];
+        for (const order of existingOrders) {
+          const itemsStmt = db.prepare(`
+            SELECT oi.*, m.name, m.category, m.price, m.description, m.image_url
+            FROM order_items oi
+            LEFT JOIN menu m ON oi.menu_id = m.id
+            WHERE oi.order_id = ?
+          `);
+          const orderItems = itemsStmt.all(order.id);
+          allOrderItems.push(...orderItems.map(item => ({
+            ...item,
+            order_unique_code: order.unique_code,
+            order_status: order.status,
+            order_created_at: order.created_at
+          })));
+        }
+
+        // Return the most recent order for continuation
+        const mostRecentOrder = existingOrders[0];
         const itemsStmt = db.prepare(`
           SELECT oi.*, m.name, m.category, m.price, m.description, m.image_url
           FROM order_items oi
           LEFT JOIN menu m ON oi.menu_id = m.id
           WHERE oi.order_id = ?
         `);
-        const orderItems = itemsStmt.all(existingOrder.id);
+        const orderItems = itemsStmt.all(mostRecentOrder.id);
 
         const transformedOrder = {
-          ...existingOrder,
+          ...mostRecentOrder,
           tables: {
             id: table.id,
             table_number: table.table_number,
@@ -424,6 +442,26 @@ app.post('/api/orders/initialize', (req, res) => {
             menu_id: item.menu_id,
             quantity: item.quantity,
             created_at: item.created_at,
+            menu: {
+              id: item.menu_id,
+              name: item.name,
+              category: item.category,
+              price: item.price,
+              description: item.description,
+              image_url: item.image_url,
+              is_available: true,
+              created_at: ''
+            }
+          })),
+          all_table_items: allOrderItems.map(item => ({
+            id: item.id,
+            order_id: item.order_id,
+            menu_id: item.menu_id,
+            quantity: item.quantity,
+            created_at: item.created_at,
+            order_unique_code: item.order_unique_code,
+            order_status: item.order_status,
+            order_created_at: item.order_created_at,
             menu: {
               id: item.menu_id,
               name: item.name,
@@ -634,14 +672,39 @@ app.put('/api/orders/:id/status', (req, res) => {
 
 app.post('/api/orders/:id/items', (req, res) => {
   try {
-    const { menuId, quantity } = req.body;
+    const { menuId, quantity, createNewOrder } = req.body;
+    
+    let orderId = req.params.id;
+    
+    // If createNewOrder is true, create a new sub-order
+    if (createNewOrder) {
+      // Get the current order to get table info
+      const currentOrderStmt = db.prepare('SELECT * FROM orders WHERE id = ?');
+      const currentOrder = currentOrderStmt.get(req.params.id);
+      
+      if (!currentOrder) {
+        return res.status(404).json({ error: 'Original order not found' });
+      }
+      
+      // Create new sub-order with same table and unique code
+      const newOrderStmt = db.prepare(`
+        INSERT INTO orders (table_id, unique_code, status) 
+        VALUES (?, ?, 'Pending')
+      `);
+      const result = newOrderStmt.run(currentOrder.table_id, currentOrder.unique_code);
+      
+      // Get the new order ID
+      const newOrderIdStmt = db.prepare('SELECT id FROM orders WHERE rowid = ?');
+      const newOrder = newOrderIdStmt.get(result.lastInsertRowid);
+      orderId = newOrder.id;
+    }
     
     // Check if item already exists in order
     const existingStmt = db.prepare(`
       SELECT * FROM order_items 
       WHERE order_id = ? AND menu_id = ?
     `);
-    const existingItem = existingStmt.get(req.params.id, menuId);
+    const existingItem = existingStmt.get(orderId, menuId);
 
     if (existingItem) {
       // Update existing item quantity
@@ -657,10 +720,10 @@ app.post('/api/orders/:id/items', (req, res) => {
         INSERT INTO order_items (order_id, menu_id, quantity) 
         VALUES (?, ?, ?)
       `);
-      insertStmt.run(req.params.id, menuId, quantity);
+      insertStmt.run(orderId, menuId, quantity);
     }
 
-    res.json({ success: true });
+    res.json({ success: true, orderId: orderId });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

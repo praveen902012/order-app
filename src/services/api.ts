@@ -127,10 +127,10 @@ class ApiService {
   }
 
   // Order items operations
-  async addOrderItem(orderId: string, menuItemId: string, quantity: number): Promise<void> {
-    return this.request<void>(`/api/orders/${orderId}/items`, {
+  async addOrderItem(orderId: string, menuItemId: string, quantity: number, createNewOrder: boolean = false): Promise<{ success: boolean; orderId?: string }> {
+    return this.request<{ success: boolean; orderId?: string }>(`/api/orders/${orderId}/items`, {
       method: 'POST',
-      body: JSON.stringify({ menuId: menuItemId, quantity }),
+      body: JSON.stringify({ menuId: menuItemId, quantity, createNewOrder }),
     });
   }
 

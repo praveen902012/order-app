@@ -174,6 +174,9 @@ export const KitchenDashboard: React.FC = () => {
                     <p className="text-sm text-gray-500">
                       Code: {order.unique_code}
                     </p>
+                    <p className="text-xs text-gray-400">
+                      Order ID: {order.id.substring(0, 8)}...
+                    </p>
                   </div>
                   <div className="flex items-center gap-2">
                     {getStatusIcon(order.status)}

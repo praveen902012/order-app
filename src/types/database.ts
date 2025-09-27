@@ -33,6 +33,7 @@ export interface Order {
   created_at: string;
   tables?: Table;
   order_items?: OrderItem[];
+  all_table_items?: OrderItem[];
 }
 
 export interface OrderItem {

@@ -12,11 +12,13 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]); // Local cart for new items
   const [existingOrderItems, setExistingOrderItems] = useState<CartItem[]>([]); // Items already ordered
+  const [allTableItems, setAllTableItems] = useState<CartItem[]>([]); // All items ever ordered for this table
   const [showCart, setShowCart] = useState(false);
   const [loading, setLoading] = useState(true);
   const [placingOrder, setPlacingOrder] = useState(false);
   const [showOrderCode, setShowOrderCode] = useState(false);
   const [refreshingOrder, setRefreshingOrder] = useState(false);
+  const [showOrderHistory, setShowOrderHistory] = useState(false);
 
   useEffect(() => {
     loadMenu();
@@ -44,6 +46,17 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
           quantity: item.quantity
         }));
         setExistingOrderItems(existingItems);
+        
+        // Load all table items for order history
+        if (currentOrder.all_table_items) {
+          const allItems = currentOrder.all_table_items.map(item => ({
+            ...item.menu!,
+            quantity: item.quantity,
+            order_status: item.order_status,
+            order_created_at: item.order_created_at
+          }));
+          setAllTableItems(allItems);
+        }
       }
     } catch (error) {
       console.error('Failed to load existing order items:', error);
@@ -91,9 +104,24 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
 
     setPlacingOrder(true);
     try {
+      // Create a new sub-order for additional items if there are existing orders
+      const createNewOrder = existingOrderItems.length > 0;
+      let currentOrderId = order.id;
+      
       // Add all cart items to the order
-      for (const item of cart) {
-        await apiService.addOrderItem(order.id, item.id, item.quantity);
+      for (let i = 0; i < cart.length; i++) {
+        const item = cart[i];
+        const result = await apiService.addOrderItem(
+          currentOrderId, 
+          item.id, 
+          item.quantity, 
+          createNewOrder && i === 0 // Only create new order for first item
+        );
+        
+        // Update order ID if a new order was created
+        if (result.orderId) {
+          currentOrderId = result.orderId;
+        }
       }
       
       // Clear the cart after successful order placement
@@ -102,7 +130,12 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
       
       // Refresh existing order items to show the newly placed items
       await loadExistingOrderItems();
-      alert('Order placed successfully!');
+      
+      if (createNewOrder) {
+        alert('Additional order placed successfully! Kitchen will receive a new ticket.');
+      } else {
+        alert('Order placed successfully!');
+      }
     } catch (error) {
       console.error('Failed to place order:', error);
       alert('Failed to place order. Please try again.');
@@ -113,7 +146,7 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
 
   const getTotalPrice = () => {
     const cartTotal = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
-    const existingTotal = existingOrderItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+    const existingTotal = allTableItems.reduce((total, item) => total + (item.price * item.quantity), 0);
     return cartTotal + existingTotal;
   };
 
@@ -122,7 +155,7 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
   };
 
   const getExistingOrderTotal = () => {
-    return existingOrderItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+    return allTableItems.reduce((total, item) => total + (item.price * item.quantity), 0);
   };
 
   const getItemQuantity = (itemId: string) => {
@@ -177,13 +210,24 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
             <div>
               <h1 className="text-xl font-bold text-gray-900">Menu</h1>
               <p className="text-sm text-gray-500">Table {order.tables?.table_number}</p>
-              {existingOrderItems.length > 0 && (
+              {allTableItems.length > 0 && (
                 <p className="text-xs text-blue-600 mt-1">
-                  {existingOrderItems.reduce((sum, item) => sum + item.quantity, 0)} items already ordered
+                  {allTableItems.reduce((sum, item) => sum + item.quantity, 0)} items ordered for this table
                 </p>
               )}
             </div>
             <div className="flex gap-2">
+              {allTableItems.length > 0 && (
+                <button
+                  onClick={() => setShowOrderHistory(true)}
+                  className="flex items-center gap-2 bg-purple-100 text-purple-700 px-3 py-2 rounded-lg hover:bg-purple-200 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  History
+                </button>
+              )}
               <button
                 onClick={refreshOrder}
                 disabled={refreshingOrder}
@@ -284,18 +328,18 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
       </div>
 
       {/* Cart Summary */}
-      {(cart.length > 0 || existingOrderItems.length > 0) && (
+      {(cart.length > 0 || allTableItems.length > 0) && (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
           <div className="max-w-4xl mx-auto">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <ShoppingCart className="w-5 h-5 text-gray-600" />
                 <span className="font-medium">
-                  {cart.reduce((sum, item) => sum + item.quantity, 0) + existingOrderItems.reduce((sum, item) => sum + item.quantity, 0)} items
+                  {cart.reduce((sum, item) => sum + item.quantity, 0) + allTableItems.reduce((sum, item) => sum + item.quantity, 0)} items
                 </span>
-                {existingOrderItems.length > 0 && (
+                {allTableItems.length > 0 && (
                   <span className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
-                    {existingOrderItems.reduce((sum, item) => sum + item.quantity, 0)} ordered
+                    {allTableItems.reduce((sum, item) => sum + item.quantity, 0)} ordered
                   </span>
                 )}
               </div>
@@ -303,7 +347,7 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
                 <p className="text-xl font-bold text-gray-900">
                   ${getTotalPrice().toFixed(2)}
                 </p>
-                {existingOrderItems.length > 0 && cart.length > 0 && (
+                {allTableItems.length > 0 && cart.length > 0 && (
                   <p className="text-xs text-gray-500">
                     New: ${getCartTotal().toFixed(2)}
                   </p>
@@ -346,7 +390,7 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
             </div>
             
             <div className="flex-1 overflow-y-auto p-6">
-              {cart.length === 0 && existingOrderItems.length === 0 ? (
+              {cart.length === 0 && allTableItems.length === 0 ? (
                 <div className="text-center py-8">
                   <ShoppingCart className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                   <p className="text-gray-500">Your cart is empty</p>
@@ -354,26 +398,29 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
               ) : (
                 <div className="space-y-4">
                   {/* Existing Order Items */}
-                  {existingOrderItems.length > 0 && (
+                  {allTableItems.length > 0 && (
                     <div>
                       <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-medium text-blue-700">Already Ordered</h4>
+                        <h4 className="font-medium text-blue-700">Table Order History</h4>
                         <span className="text-sm text-blue-600 bg-blue-50 px-2 py-1 rounded-full">
                           ${getExistingOrderTotal().toFixed(2)}
                         </span>
                       </div>
                       <div className="space-y-2">
-                        {existingOrderItems.map(item => (
-                          <div key={`existing-${item.id}`} className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        {allTableItems.map((item, index) => (
+                          <div key={`existing-${item.id}-${index}`} className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
                             <div className="flex-1">
                               <h4 className="font-medium text-gray-900">{item.name}</h4>
                               <p className="text-sm text-gray-600">${item.price.toFixed(2)} each</p>
+                              <p className="text-xs text-gray-500">
+                                Status: <span className="capitalize">{item.order_status}</span>
+                              </p>
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="font-medium text-blue-700 bg-blue-100 px-2 py-1 rounded">
                                 ×{item.quantity}
                               </span>
-                              <span className="text-sm text-blue-600">Ordered</span>
+                              <span className="text-xs text-blue-600 capitalize">{item.order_status}</span>
                             </div>
                           </div>
                         ))}
@@ -384,7 +431,7 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
                   {/* New Cart Items */}
                   {cart.length > 0 && (
                     <div>
-                      {existingOrderItems.length > 0 && (
+                      {allTableItems.length > 0 && (
                         <div className="flex items-center justify-between mb-3 mt-6">
                           <h4 className="font-medium text-orange-700">New Items</h4>
                           <span className="text-sm text-orange-600 bg-orange-50 px-2 py-1 rounded-full">
@@ -431,12 +478,12 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
               )}
             </div>
             
-            {(cart.length > 0 || existingOrderItems.length > 0) && (
+            {(cart.length > 0 || allTableItems.length > 0) && (
               <div className="p-6 border-t">
                 <div className="space-y-2 mb-4">
-                  {existingOrderItems.length > 0 && (
+                  {allTableItems.length > 0 && (
                     <div className="flex justify-between items-center text-sm">
-                      <span className="text-blue-600">Already Ordered:</span>
+                      <span className="text-blue-600">Table Total:</span>
                       <span className="font-medium text-blue-600">
                         ${getExistingOrderTotal().toFixed(2)}
                       </span>
@@ -470,11 +517,15 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
                       disabled={placingOrder}
                       className="flex-1 bg-orange-500 text-white py-3 rounded-lg hover:bg-orange-600 disabled:bg-orange-300 transition-colors font-medium"
                     >
-                      {placingOrder ? 'Placing...' : `Place Order ($${getCartTotal().toFixed(2)})`}
+                      {placingOrder ? 'Placing...' : 
+                        allTableItems.length > 0 ? 
+                          `Add to Order ($${getCartTotal().toFixed(2)})` : 
+                          `Place Order ($${getCartTotal().toFixed(2)})`
+                      }
                     </button>
                   </div>
                 )}
-                {cart.length === 0 && existingOrderItems.length > 0 && (
+                {cart.length === 0 && allTableItems.length > 0 && (
                   <div className="text-center">
                     <p className="text-gray-600 mb-3">Add new items to place another order</p>
                     <button
@@ -607,6 +658,99 @@ export const Menu: React.FC<MenuProps> = ({ order, uniqueCode }) => {
                 className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 transition-colors"
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Order History Modal */}
+      {showOrderHistory && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-lg max-h-[80vh] flex flex-col">
+            <div className="p-6 border-b">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Order History - Table {order.tables?.table_number}</h3>
+                <button
+                  onClick={() => setShowOrderHistory(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto p-6">
+              {allTableItems.length === 0 ? (
+                <div className="text-center py-8">
+                  <svg className="w-12 h-12 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <p className="text-gray-500">No order history</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Group items by order creation time */}
+                  {Object.entries(
+                    allTableItems.reduce((groups, item) => {
+                      const orderTime = new Date(item.order_created_at).toLocaleString();
+                      if (!groups[orderTime]) {
+                        groups[orderTime] = [];
+                      }
+                      groups[orderTime].push(item);
+                      return groups;
+                    }, {} as Record<string, typeof allTableItems>)
+                  ).map(([orderTime, items]) => (
+                    <div key={orderTime} className="border rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-medium text-gray-900">Order placed at {orderTime}</h4>
+                        <span className={`px-2 py-1 text-xs rounded-full ${
+                          items[0].order_status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                          items[0].order_status === 'Preparing' ? 'bg-blue-100 text-blue-800' :
+                          items[0].order_status === 'Ready' ? 'bg-green-100 text-green-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {items[0].order_status}
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        {items.map((item, index) => (
+                          <div key={`history-${item.id}-${index}`} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
+                            <div className="flex-1">
+                              <h5 className="font-medium text-gray-900">{item.name}</h5>
+                              <p className="text-sm text-gray-600">${item.price.toFixed(2)} each</p>
+                            </div>
+                            <div className="text-right">
+                              <span className="font-medium">×{item.quantity}</span>
+                              <p className="text-sm text-gray-600">${(item.price * item.quantity).toFixed(2)}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-3 pt-3 border-t border-gray-200">
+                        <div className="flex justify-between items-center font-medium">
+                          <span>Subtotal:</span>
+                          <span>${items.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            <div className="p-6 border-t">
+              <div className="flex justify-between items-center mb-4">
+                <span className="text-lg font-semibold">Total Spent:</span>
+                <span className="text-xl font-bold text-gray-900">
+                  ${getExistingOrderTotal().toFixed(2)}
+                </span>
+              </div>
+              <button
+                onClick={() => setShowOrderHistory(false)}
+                className="w-full bg-blue-500 text-white py-3 rounded-lg hover:bg-blue-600 transition-colors font-medium"
+              >
+                Close History
               </button>
             </div>
           </div>
