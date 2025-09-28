@@ -157,6 +157,38 @@ class ApiService {
       unsubscribe: () => clearInterval(interval)
     };
   }
+
+  // Order history operations
+  async getOrderHistory(filters: {
+    filterType: 'dateRange' | 'month' | 'year';
+    startDate?: string;
+    endDate?: string;
+    month?: string;
+    year?: string;
+  }): Promise<{
+    orders: any[];
+    analytics: {
+      totalOrders: number;
+      totalSales: number;
+      totalItems: number;
+      averageOrder: number;
+    };
+  }> {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value) params.append(key, value);
+    });
+    
+    return this.request<{
+      orders: any[];
+      analytics: {
+        totalOrders: number;
+        totalSales: number;
+        totalItems: number;
+        averageOrder: number;
+      };
+    }>(`/api/orders/history?${params.toString()}`);
+  }
 }
 
 // Export both the class and an instance

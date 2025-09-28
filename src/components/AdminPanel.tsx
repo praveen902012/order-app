@@ -66,6 +66,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
   }, [activeTab]);
 
   useEffect(() => {
+    if (activeTab === 'history') {
+      loadOrderHistory();
+    }
+  }, [historyFilterType, historyStartDate, historyEndDate, historyMonth, historyYear]);
+
+  useEffect(() => {
     if (activeTab === 'orders') {
       loadOrderHistory();
     }
@@ -103,15 +109,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
   const loadOrderHistory = async () => {
     setOrdersLoading(true);
     try {
-      let startDate, endDate;
+      const filters: any = {
+        filterType: historyFilterType
+      };
       
-      if (filterType === 'date') {
-        startDate = dateFilter.startDate;
-        endDate = dateFilter.endDate;
-      } else if (filterType === 'month') {
-        startDate = new Date(dateFilter.year, dateFilter.month - 1, 1).toISOString().split('T')[0];
-        endDate = new Date(dateFilter.year, dateFilter.month, 0).toISOString().split('T')[0];
-      } else if (filterType === 'year') {
+      if (historyFilterType === 'dateRange') {
+        filters.startDate = historyStartDate;
+        filters.endDate = historyEndDate;
+      } else if (historyFilterType === 'month') {
+        filters.month = historyMonth.toString();
+        filters.year = historyYear.toString();
+      } else if (historyFilterType === 'year') {
+        filters.year = historyYear.toString();
+      }
+      
+      const result = await apiService.getOrderHistory(filters);
+      setOrderHistory(result.orders);
+      setOrderAnalytics(result.analytics);
         startDate = new Date(dateFilter.year, 0, 1).toISOString().split('T')[0];
         endDate = new Date(dateFilter.year, 11, 31).toISOString().split('T')[0];
       }
@@ -123,6 +137,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
       setSalesAnalytics(data.analytics || {});
     } catch (error) {
       console.error('Failed to load order history:', error);
+      setOrderHistory([]);
+      setOrderAnalytics({
+        totalOrders: 0,
+        totalSales: 0,
+        totalItems: 0,
+        averageOrder: 0
+      });
       setOrderHistory([]);
       setSalesAnalytics({});
     } finally {

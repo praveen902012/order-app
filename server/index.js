@@ -755,53 +755,52 @@ app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-// Order history route
+// Order history route - moved before app.listen
 app.get('/api/orders/history', (req, res) => {
   try {
-    const { startDate, endDate } = req.query;
+    const { startDate, endDate, filterType, month, year } = req.query;
     
-    // Get orders within date range
+    let whereClause = "WHERE 1=1";
+    let params = [];
+    
+    if (filterType === 'dateRange' && startDate && endDate) {
+      whereClause += " AND DATE(o.created_at) BETWEEN ? AND ?";
+      params.push(startDate, endDate);
+    } else if (filterType === 'month' && month && year) {
+      whereClause += " AND strftime('%Y-%m', o.created_at) = ?";
+      params.push(`${year}-${month.padStart(2, '0')}`);
+    } else if (filterType === 'year' && year) {
+      whereClause += " AND strftime('%Y', o.created_at) = ?";
+      params.push(year);
+    }
+    
+    // Get orders with items
     const ordersStmt = db.prepare(`
-      SELECT 
-        o.*,
-        t.table_number,
-        GROUP_CONCAT(
-          json_object(
-            'name', m.name,
-            'quantity', oi.quantity,
-            'price', m.price
-          )
-        ) as items_json
+      SELECT DISTINCT
+        o.id,
+        o.unique_code,
+        o.status,
+        o.created_at,
+        t.table_number
       FROM orders o
       LEFT JOIN tables t ON o.table_id = t.id
       LEFT JOIN order_items oi ON o.id = oi.order_id
-      LEFT JOIN menu m ON oi.menu_id = m.id
-      WHERE DATE(o.created_at) BETWEEN ? AND ?
-      GROUP BY o.id
+      ${whereClause}
       ORDER BY o.created_at DESC
     `);
     
-    const orders = ordersStmt.all(startDate, endDate);
+    const orders = ordersStmt.all(...params);
     
-    // Process orders and calculate totals
+    // Get items for each order
     const processedOrders = orders.map(order => {
-      let orderItems = [];
-      let total = 0;
-      
-      if (order.items_json) {
-        try {
-          // Parse the concatenated JSON objects
-          const itemsArray = order.items_json.split(',{').map((item, index) => {
-            if (index > 0) item = '{' + item;
-            return JSON.parse(item);
-          });
-          
-          orderItems = itemsArray;
-          total = itemsArray.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-        } catch (error) {
-          console.error('Error parsing order items:', error);
-        }
-      }
+      const itemsStmt = db.prepare(`
+        SELECT oi.quantity, m.name, m.price
+        FROM order_items oi
+        LEFT JOIN menu m ON oi.menu_id = m.id
+        WHERE oi.order_id = ?
+      `);
+      const orderItems = itemsStmt.all(order.id);
+      const total = orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
       
       return {
         ...order,
@@ -829,4 +828,3 @@ app.get('/api/orders/history', (req, res) => {
     console.error('Error fetching order history:', error);
     res.status(500).json({ error: error.message });
   }
-});
