@@ -66,12 +66,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
   }, [activeTab]);
 
   useEffect(() => {
-    if (activeTab === 'history') {
-      loadOrderHistory();
-    }
-  }, [historyFilterType, historyStartDate, historyEndDate, historyMonth, historyYear]);
-
-  useEffect(() => {
     if (activeTab === 'orders') {
       loadOrderHistory();
     }
@@ -109,40 +103,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
   const loadOrderHistory = async () => {
     setOrdersLoading(true);
     try {
-      const filters: any = {
-        filterType: historyFilterType
-      };
+      let startDate, endDate;
       
-      if (historyFilterType === 'dateRange') {
-        filters.startDate = historyStartDate;
-        filters.endDate = historyEndDate;
-      } else if (historyFilterType === 'month') {
-        filters.month = historyMonth.toString();
-        filters.year = historyYear.toString();
-      } else if (historyFilterType === 'year') {
-        filters.year = historyYear.toString();
-      }
-
-      const data = await apiService.getOrderHistory(filters);
-      setOrderHistory(data.orders);
-      setOrderAnalytics(data.analytics);
-    } catch (error) {
-      console.error('Failed to load order history:', error);
-      setOrderHistory([]);
-      setOrderAnalytics({
-        totalOrders: 0,
-        totalSales: 0,
-        totalItems: 0,
-        averageOrder: 0
-      });
-        filters.year = historyYear.toString();
-      else if (historyFilterType === 'year') {
-        filters.year = historyYear.toString();
-      }
-      
-      const result = await apiService.getOrderHistory(filters);
-      setOrderHistory(result.orders);
-      setOrderAnalytics(result.analytics);
+      if (filterType === 'date') {
+        startDate = dateFilter.startDate;
+        endDate = dateFilter.endDate;
+      } else if (filterType === 'month') {
+        startDate = new Date(dateFilter.year, dateFilter.month - 1, 1).toISOString().split('T')[0];
+        endDate = new Date(dateFilter.year, dateFilter.month, 0).toISOString().split('T')[0];
+      } else if (filterType === 'year') {
         startDate = new Date(dateFilter.year, 0, 1).toISOString().split('T')[0];
         endDate = new Date(dateFilter.year, 11, 31).toISOString().split('T')[0];
       }
@@ -155,18 +124,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
     } catch (error) {
       console.error('Failed to load order history:', error);
       setOrderHistory([]);
-      setOrderAnalytics({
+      setSalesAnalytics({
         totalOrders: 0,
         totalSales: 0,
         totalItems: 0,
         averageOrder: 0
       });
-      setOrderHistory([]);
-      setSalesAnalytics({});
     } finally {
       setOrdersLoading(false);
     }
   };
+
   // Table operations
   const handleAddTable = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -539,23 +507,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
                                 />
                                 <input
                                   type="url"
-                                 value={editingMenuItem?.image_url || ''}
+                                  value={editingMenuItem?.image_url || ''}
                                   onChange={(e) => setEditingMenuItem({
                                     ...editingMenuItem,
-                                   image_url: e.target.value.trim() || null
+                                    image_url: e.target.value.trim() || null
                                   })}
-                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                                   placeholder="Image URL (optional)"
                                 />
                                 {editingMenuItem?.image_url && (
                                   <div className="mt-2">
                                     <img
-                                     src={editingMenuItem?.image_url}
+                                      src={editingMenuItem?.image_url}
                                       alt="Preview"
                                       className="w-16 h-16 object-cover rounded-lg border border-gray-200"
                                       onError={(e) => {
                                         const target = e.target as HTMLImageElement;
-                                       target.style.display = 'none';
+                                        target.style.display = 'none';
                                       }}
                                     />
                                   </div>
@@ -627,15 +595,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
                             </div>
                           ) : (
                             <div className="flex justify-between items-start">
-                             <div className="flex-shrink-0 mr-4">
+                              <div className="flex-shrink-0 mr-4">
                                 {item.image_url ? (
                                   <img
                                     src={item.image_url}
                                     alt={item.name}
-                                   className="w-20 h-20 object-cover rounded-lg border border-gray-200"
+                                    className="w-20 h-20 object-cover rounded-lg border border-gray-200"
                                     onError={(e) => {
                                       const target = e.target as HTMLImageElement;
-                                     target.style.display = 'none';
+                                      target.style.display = 'none';
                                       // Show placeholder by replacing with a div
                                       const placeholder = document.createElement('div');
                                       placeholder.className = 'w-20 h-20 bg-gray-200 rounded-lg border border-gray-300 flex items-center justify-center';
@@ -644,7 +612,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
                                     }}
                                   />
                                 ) : (
-                                 <div className="w-20 h-20 bg-gray-200 rounded-lg border border-gray-300 flex items-center justify-center">
+                                  <div className="w-20 h-20 bg-gray-200 rounded-lg border border-gray-300 flex items-center justify-center">
                                     <span className="text-gray-400 text-xs text-center">No Image</span>
                                   </div>
                                 )}
