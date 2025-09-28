@@ -751,10 +751,6 @@ app.put('/api/order-items/:id/quantity', (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
-
 // Order history route - moved before app.listen
 app.get('/api/orders/history', (req, res) => {
   try {
@@ -828,5 +824,8 @@ app.get('/api/orders/history', (req, res) => {
     console.error('Error fetching order history:', error);
     res.status(500).json({ error: error.message });
   }
-}
-)
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
