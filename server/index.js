@@ -221,6 +221,73 @@ const initializeSampleData = () => {
       insertOrderItem.run(order4Id, menuItemsData[15].id, 1); // Chocolate Cake x1
       insertOrderItem.run(order4Id, menuItemsData[20].id, 1); // Cheesecake x1
     }
+
+    // Add 1000 dummy order records for testing order history
+    console.log('Creating 1000 dummy order records for testing...');
+    
+    const allTables = db.prepare('SELECT * FROM tables').all();
+    const allMenuItems = db.prepare('SELECT * FROM menu').all();
+    const statuses = ['Pending', 'Preparing', 'Ready', 'Served'];
+    
+    // Helper function to generate random date within last 2 years
+    const getRandomDate = () => {
+      const now = new Date();
+      const twoYearsAgo = new Date(now.getFullYear() - 2, now.getMonth(), now.getDate());
+      const randomTime = twoYearsAgo.getTime() + Math.random() * (now.getTime() - twoYearsAgo.getTime());
+      return new Date(randomTime).toISOString();
+    };
+    
+    // Helper function to get random items from array
+    const getRandomItems = (array, count) => {
+      const shuffled = [...array].sort(() => 0.5 - Math.random());
+      return shuffled.slice(0, count);
+    };
+    
+    for (let i = 0; i < 1000; i++) {
+      try {
+        // Random table
+        const randomTable = allTables[Math.floor(Math.random() * allTables.length)];
+        
+        // Random status (mostly served for history)
+        const randomStatus = i < 950 ? 'Served' : statuses[Math.floor(Math.random() * statuses.length)];
+        
+        // Generate unique code for this dummy order
+        const dummyCode = `DUMMY${i.toString().padStart(4, '0')}`;
+        
+        // Random date
+        const orderDate = getRandomDate();
+        
+        // Create order
+        const dummyOrderStmt = db.prepare(`
+          INSERT INTO orders (table_id, unique_code, status, created_at) 
+          VALUES (?, ?, ?, ?)
+        `);
+        const orderResult = dummyOrderStmt.run(randomTable.id, dummyCode, randomStatus, orderDate);
+        const dummyOrderId = db.prepare('SELECT id FROM orders WHERE rowid = ?').get(orderResult.lastInsertRowid).id;
+        
+        // Add 1-8 random items to each order
+        const itemCount = Math.floor(Math.random() * 8) + 1;
+        const selectedItems = getRandomItems(allMenuItems, itemCount);
+        
+        selectedItems.forEach(menuItem => {
+          const quantity = Math.floor(Math.random() * 4) + 1; // 1-4 quantity
+          const dummyItemStmt = db.prepare(`
+            INSERT INTO order_items (order_id, menu_id, quantity, created_at) 
+            VALUES (?, ?, ?, ?)
+          `);
+          dummyItemStmt.run(dummyOrderId, menuItem.id, quantity, orderDate);
+        });
+        
+        // Log progress every 100 orders
+        if ((i + 1) % 100 === 0) {
+          console.log(`Created ${i + 1}/1000 dummy orders...`);
+        }
+      } catch (error) {
+        console.error(`Error creating dummy order ${i + 1}:`, error);
+      }
+    }
+    
+    console.log('Finished creating 1000 dummy order records!');
   }
 };
 
