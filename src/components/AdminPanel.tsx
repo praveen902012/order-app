@@ -1,20 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, CreditCard as Edit2, Trash2, Save, X, Settings, Table, Menu as MenuIcon, Wifi, WifiOff } from 'lucide-react';
+import { Plus, CreditCard as Edit2, Trash2, Save, X, Settings, Table, Menu as MenuIcon, Wifi, WifiOff, Clock, CreditCard, ShoppingCart, TrendingUp, Package } from 'lucide-react';
 import { Table as DBTable, MenuItem } from '../types/database';
 import { apiService } from '../services/api';
 
 interface AdminPanelProps {}
 
 export const AdminPanel: React.FC<AdminPanelProps> = () => {
-  const [activeTab, setActiveTab] = useState<'tables' | 'menu' | 'unavailable'>('tables');
+  const [activeTab, setActiveTab] = useState<'tables' | 'menu' | 'unavailable' | 'orders'>('tables');
   const [tables, setTables] = useState<DBTable[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [orderHistory, setOrderHistory] = useState<any[]>([]);
+  const [salesAnalytics, setSalesAnalytics] = useState<any>({});
   const [loading, setLoading] = useState(true);
+  const [ordersLoading, setOrdersLoading] = useState(false);
   const [editingTable, setEditingTable] = useState<DBTable | null>(null);
   const [editingMenuItem, setEditingMenuItem] = useState<MenuItem | null>(null);
   const [showAddTable, setShowAddTable] = useState(false);
   const [showAddMenuItem, setShowAddMenuItem] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'unknown' | 'connected' | 'disconnected' | 'testing'>('unknown');
+
+  // Order history filters
+  const [dateFilter, setDateFilter] = useState({
+    startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
+    endDate: new Date().toISOString().split('T')[0],
+    month: new Date().getMonth() + 1,
+    year: new Date().getFullYear()
+  });
+  const [filterType, setFilterType] = useState<'date' | 'month' | 'year'>('month');
 
   // Get unavailable items
   const unavailableItems = menuItems.filter(item => !item.is_available);
@@ -48,7 +60,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
 
   useEffect(() => {
     loadData();
-  }, []);
+    if (activeTab === 'orders') {
+      loadOrderHistory();
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab === 'orders') {
+      loadOrderHistory();
+    }
+  }, [dateFilter, filterType]);
 
   const loadData = async () => {
     setLoading(true);
@@ -79,6 +100,35 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
     }
   };
 
+  const loadOrderHistory = async () => {
+    setOrdersLoading(true);
+    try {
+      let startDate, endDate;
+      
+      if (filterType === 'date') {
+        startDate = dateFilter.startDate;
+        endDate = dateFilter.endDate;
+      } else if (filterType === 'month') {
+        startDate = new Date(dateFilter.year, dateFilter.month - 1, 1).toISOString().split('T')[0];
+        endDate = new Date(dateFilter.year, dateFilter.month, 0).toISOString().split('T')[0];
+      } else if (filterType === 'year') {
+        startDate = new Date(dateFilter.year, 0, 1).toISOString().split('T')[0];
+        endDate = new Date(dateFilter.year, 11, 31).toISOString().split('T')[0];
+      }
+      
+      const response = await fetch(`http://localhost:3001/api/orders/history?startDate=${startDate}&endDate=${endDate}`);
+      const data = await response.json();
+      
+      setOrderHistory(data.orders || []);
+      setSalesAnalytics(data.analytics || {});
+    } catch (error) {
+      console.error('Failed to load order history:', error);
+      setOrderHistory([]);
+      setSalesAnalytics({});
+    } finally {
+      setOrdersLoading(false);
+    }
+  };
   // Table operations
   const handleAddTable = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -307,6 +357,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
             >
               <WifiOff className="w-5 h-5" />
               Unavailable Items ({unavailableItems.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('orders')}
+              className={`flex items-center gap-2 px-6 py-4 font-medium transition-colors ${
+                activeTab === 'orders'
+                  ? 'text-purple-600 border-b-2 border-purple-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <Clock className="w-5 h-5" />
+              Order History
             </button>
           </div>
         </div>
@@ -858,6 +919,271 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Order History Tab */}
+        {activeTab === 'orders' && (
+          <div className="space-y-6">
+            {/* Filters */}
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Order History & Analytics</h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Filter Type</label>
+                  <select
+                    value={filterType}
+                    onChange={(e) => setFilterType(e.target.value as 'date' | 'month' | 'year')}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  >
+                    <option value="date">Date Range</option>
+                    <option value="month">Month</option>
+                    <option value="year">Year</option>
+                  </select>
+                </div>
+
+                {filterType === 'date' && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Start Date</label>
+                      <input
+                        type="date"
+                        value={dateFilter.startDate}
+                        onChange={(e) => setDateFilter({...dateFilter, startDate: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">End Date</label>
+                      <input
+                        type="date"
+                        value={dateFilter.endDate}
+                        onChange={(e) => setDateFilter({...dateFilter, endDate: e.target.value})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {filterType === 'month' && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Month</label>
+                      <select
+                        value={dateFilter.month}
+                        onChange={(e) => setDateFilter({...dateFilter, month: parseInt(e.target.value)})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                      >
+                        {Array.from({length: 12}, (_, i) => (
+                          <option key={i + 1} value={i + 1}>
+                            {new Date(2024, i).toLocaleString('default', { month: 'long' })}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Year</label>
+                      <select
+                        value={dateFilter.year}
+                        onChange={(e) => setDateFilter({...dateFilter, year: parseInt(e.target.value)})}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                      >
+                        {Array.from({length: 5}, (_, i) => {
+                          const year = new Date().getFullYear() - i;
+                          return <option key={year} value={year}>{year}</option>;
+                        })}
+                      </select>
+                    </div>
+                  </>
+                )}
+
+                {filterType === 'year' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Year</label>
+                    <select
+                      value={dateFilter.year}
+                      onChange={(e) => setDateFilter({...dateFilter, year: parseInt(e.target.value)})}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    >
+                      {Array.from({length: 5}, (_, i) => {
+                        const year = new Date().getFullYear() - i;
+                        return <option key={year} value={year}>{year}</option>;
+                      })}
+                    </select>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Sales Analytics */}
+            {!ordersLoading && salesAnalytics && (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="bg-white rounded-lg shadow-sm p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Total Sales</p>
+                      <p className="text-2xl font-bold text-green-600">
+                        ${(salesAnalytics.totalSales || 0).toFixed(2)}
+                      </p>
+                    </div>
+                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                      <CreditCard className="w-6 h-6 text-green-600" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-lg shadow-sm p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Total Orders</p>
+                      <p className="text-2xl font-bold text-blue-600">
+                        {salesAnalytics.totalOrders || 0}
+                      </p>
+                    </div>
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                      <ShoppingCart className="w-6 h-6 text-blue-600" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-lg shadow-sm p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Average Order</p>
+                      <p className="text-2xl font-bold text-purple-600">
+                        ${(salesAnalytics.averageOrder || 0).toFixed(2)}
+                      </p>
+                    </div>
+                    <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                      <TrendingUp className="w-6 h-6 text-purple-600" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-lg shadow-sm p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600">Items Sold</p>
+                      <p className="text-2xl font-bold text-orange-600">
+                        {salesAnalytics.totalItems || 0}
+                      </p>
+                    </div>
+                    <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
+                      <Package className="w-6 h-6 text-orange-600" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Order History Table */}
+            <div className="bg-white rounded-lg shadow-sm">
+              <div className="px-6 py-4 border-b">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Order History
+                  {!ordersLoading && orderHistory.length > 0 && (
+                    <span className="text-sm font-normal text-gray-500 ml-2">
+                      ({orderHistory.length} orders)
+                    </span>
+                  )}
+                </h3>
+              </div>
+              
+              <div className="overflow-x-auto">
+                {ordersLoading ? (
+                  <div className="p-12 text-center">
+                    <div className="animate-spin w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+                    <p className="text-gray-600">Loading order history...</p>
+                  </div>
+                ) : orderHistory.length === 0 ? (
+                  <div className="p-12 text-center">
+                    <Clock className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Orders Found</h3>
+                    <p className="text-gray-500">No orders found for the selected time period.</p>
+                  </div>
+                ) : (
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Order Details
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Table
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Items
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Total
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Date
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {orderHistory.map((order) => (
+                        <tr key={order.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div>
+                              <div className="text-sm font-medium text-gray-900">
+                                #{order.id.substring(0, 8)}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                Code: {order.unique_code}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">
+                              {order.table_number}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-sm text-gray-900">
+                              {order.order_items?.map((item: any, index: number) => (
+                                <div key={index} className="flex justify-between">
+                                  <span>{item.name}</span>
+                                  <span>×{item.quantity}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              order.status === 'Served' ? 'bg-green-100 text-green-800' :
+                              order.status === 'Ready' ? 'bg-blue-100 text-blue-800' :
+                              order.status === 'Preparing' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {order.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">
+                              ${order.total?.toFixed(2) || '0.00'}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">
+                              {new Date(order.created_at).toLocaleDateString()}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {new Date(order.created_at).toLocaleTimeString()}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </div>

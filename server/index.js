@@ -754,3 +754,79 @@ app.put('/api/order-items/:id/quantity', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+// Order history route
+app.get('/api/orders/history', (req, res) => {
+  try {
+    const { startDate, endDate } = req.query;
+    
+    // Get orders within date range
+    const ordersStmt = db.prepare(`
+      SELECT 
+        o.*,
+        t.table_number,
+        GROUP_CONCAT(
+          json_object(
+            'name', m.name,
+            'quantity', oi.quantity,
+            'price', m.price
+          )
+        ) as items_json
+      FROM orders o
+      LEFT JOIN tables t ON o.table_id = t.id
+      LEFT JOIN order_items oi ON o.id = oi.order_id
+      LEFT JOIN menu m ON oi.menu_id = m.id
+      WHERE DATE(o.created_at) BETWEEN ? AND ?
+      GROUP BY o.id
+      ORDER BY o.created_at DESC
+    `);
+    
+    const orders = ordersStmt.all(startDate, endDate);
+    
+    // Process orders and calculate totals
+    const processedOrders = orders.map(order => {
+      let orderItems = [];
+      let total = 0;
+      
+      if (order.items_json) {
+        try {
+          // Parse the concatenated JSON objects
+          const itemsArray = order.items_json.split(',{').map((item, index) => {
+            if (index > 0) item = '{' + item;
+            return JSON.parse(item);
+          });
+          
+          orderItems = itemsArray;
+          total = itemsArray.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        } catch (error) {
+          console.error('Error parsing order items:', error);
+        }
+      }
+      
+      return {
+        ...order,
+        order_items: orderItems,
+        total: total
+      };
+    });
+    
+    // Calculate analytics
+    const analytics = {
+      totalOrders: processedOrders.length,
+      totalSales: processedOrders.reduce((sum, order) => sum + order.total, 0),
+      totalItems: processedOrders.reduce((sum, order) => 
+        sum + order.order_items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0
+      ),
+      averageOrder: processedOrders.length > 0 ? 
+        processedOrders.reduce((sum, order) => sum + order.total, 0) / processedOrders.length : 0
+    };
+    
+    res.json({
+      orders: processedOrders,
+      analytics: analytics
+    });
+  } catch (error) {
+    console.error('Error fetching order history:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
