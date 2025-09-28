@@ -136,7 +136,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
         averageOrder: 0
       });
         filters.year = historyYear.toString();
-      } else if (historyFilterType === 'year') {
+      else if (historyFilterType === 'year') {
         filters.year = historyYear.toString();
       }
       
