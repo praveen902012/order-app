@@ -644,7 +644,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
                                   placeholder.innerHTML = '<span class="text-red-400 text-xs text-center">Image Error</span>';
                                   target.parentElement?.replaceChild(placeholder, target);
                                 }}
-                              </div>
+                              />
                             )}
                           </div>
                           <div className="flex-1">
