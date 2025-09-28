@@ -637,14 +637,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
                                 className="w-full h-full object-cover rounded-lg border-2 border-red-200"
                                 onError={(e) => {
                                   const target = e.target as HTMLImageElement;
-                                  target.style.display = 'none';
-                                  // Show placeholder by replacing with a div
-                                  const placeholder = document.createElement('div');
-                                  placeholder.className = 'w-full h-full bg-red-100 rounded-lg border-2 border-red-200 flex items-center justify-center';
-                                  placeholder.innerHTML = '<span class="text-red-400 text-xs text-center">Image Error</span>';
-                                  target.parentElement?.replaceChild(placeholder, target);
+                                  target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjRkVGMkYyIiBzdHJva2U9IiNGQ0E1QTUiIHN0cm9rZS13aWR0aD0iMiIgcng9IjgiLz4KPHRleHQgeD0iNDAiIHk9IjQ1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjRjg3MTcxIiBmb250LXNpemU9IjEwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+SW1hZ2UgRXJyb3I8L3RleHQ+Cjwvc3ZnPgo=';
                                 }}
                               />
+                            ) : (
+                              <div className="w-full h-full bg-red-100 rounded-lg border-2 border-red-200 flex items-center justify-center">
+                                <span className="text-red-400 text-xs text-center">No Image</span>
+                              </div>
                             )}
                           </div>
                           <div className="flex-1">
