@@ -828,3 +828,5 @@ app.get('/api/orders/history', (req, res) => {
     console.error('Error fetching order history:', error);
     res.status(500).json({ error: error.message });
   }
+}
+)
