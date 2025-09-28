@@ -1053,6 +1053,75 @@ app.get('/api/orders/history', (req, res) => {
   }
 });
 
+// Initialize sample data endpoint (for testing)
+app.post('/api/initialize-sample-data', (req, res) => {
+  try {
+    console.log('Manually initializing sample data...');
+    
+    // Clear existing data first
+    db.exec('DELETE FROM order_items');
+    db.exec('DELETE FROM orders');
+    db.exec('DELETE FROM users');
+    db.exec('UPDATE tables SET locked = 0, unique_code = NULL');
+    
+    console.log('Cleared existing data...');
+    
+    // Run the initialization
+    initializeSampleData();
+    
+    console.log('Sample data initialization completed!');
+    
+    res.json({ 
+      success: true, 
+      message: 'Sample data initialized successfully',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error initializing sample data:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Reset database endpoint (for testing)
+app.post('/api/reset-database', (req, res) => {
+  try {
+    console.log('Resetting database...');
+    
+    // Clear all data
+    db.exec('DELETE FROM order_items');
+    db.exec('DELETE FROM orders');
+    db.exec('DELETE FROM users');
+    db.exec('UPDATE tables SET locked = 0, unique_code = NULL');
+    db.exec('DELETE FROM menu');
+    db.exec('DELETE FROM tables');
+    
+    console.log('Database cleared, recreating tables and sample data...');
+    
+    // Recreate tables and sample data
+    createTables();
+    initializeSampleData();
+    
+    console.log('Database reset completed!');
+    
+    res.json({ 
+      success: true, 
+      message: 'Database reset and sample data initialized successfully',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error resetting database:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
