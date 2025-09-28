@@ -906,6 +906,86 @@ app.get('/api/orders/history', (req, res) => {
   }
 });
 
+// Health check route
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// Order history route
+app.get('/api/orders/history', (req, res) => {
+  try {
+    const { startDate, endDate, filterType, month, year } = req.query;
+    
+    let whereClause = "WHERE 1=1";
+    let params = [];
+    
+    if (filterType === 'dateRange' && startDate && endDate) {
+      whereClause += " AND DATE(o.created_at) BETWEEN ? AND ?";
+      params.push(startDate, endDate);
+    } else if (filterType === 'month' && month && year) {
+      whereClause += " AND strftime('%Y-%m', o.created_at) = ?";
+      params.push(`${year}-${month.padStart(2, '0')}`);
+    } else if (filterType === 'year' && year) {
+      whereClause += " AND strftime('%Y', o.created_at) = ?";
+      params.push(year);
+    }
+    
+    // Get orders with items
+    const ordersStmt = db.prepare(`
+      SELECT DISTINCT
+        o.id,
+        o.unique_code,
+        o.status,
+        o.created_at,
+        t.table_number
+      FROM orders o
+      LEFT JOIN tables t ON o.table_id = t.id
+      LEFT JOIN order_items oi ON o.id = oi.order_id
+      ${whereClause}
+      ORDER BY o.created_at DESC
+    `);
+    
+    const orders = ordersStmt.all(...params);
+    
+    // Get items for each order
+    const processedOrders = orders.map(order => {
+      const itemsStmt = db.prepare(`
+        SELECT oi.quantity, m.name, m.price
+        FROM order_items oi
+        LEFT JOIN menu m ON oi.menu_id = m.id
+        WHERE oi.order_id = ?
+      `);
+      const orderItems = itemsStmt.all(order.id);
+      const total = orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      
+      return {
+        ...order,
+        order_items: orderItems,
+        total: total
+      };
+    });
+    
+    // Calculate analytics
+    const analytics = {
+      totalOrders: processedOrders.length,
+      totalSales: processedOrders.reduce((sum, order) => sum + order.total, 0),
+      totalItems: processedOrders.reduce((sum, order) => 
+        sum + order.order_items.reduce((itemSum, item) => itemSum + item.quantity, 0), 0
+      ),
+      averageOrder: processedOrders.length > 0 ? 
+        processedOrders.reduce((sum, order) => sum + order.total, 0) / processedOrders.length : 0
+    };
+    
+    res.json({
+      orders: processedOrders,
+      analytics: analytics
+    });
+  } catch (error) {
+    console.error('Error fetching order history:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
