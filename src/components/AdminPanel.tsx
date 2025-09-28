@@ -118,6 +118,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
         filters.endDate = historyEndDate;
       } else if (historyFilterType === 'month') {
         filters.month = historyMonth.toString();
+        filters.year = historyYear.toString();
+      } else if (historyFilterType === 'year') {
+        filters.year = historyYear.toString();
+      }
+
+      const data = await apiService.getOrderHistory(filters);
+      setOrderHistory(data.orders);
+      setOrderAnalytics(data.analytics);
     } catch (error) {
       console.error('Failed to load order history:', error);
       setOrderHistory([]);
