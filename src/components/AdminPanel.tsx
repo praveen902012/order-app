@@ -644,21 +644,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = () => {
                                   placeholder.innerHTML = '<span class="text-red-400 text-xs text-center">Image Error</span>';
                                   target.parentElement?.replaceChild(placeholder, target);
                                 }}
-                              />
-                              <input
-                                type="url"
-                                value={editingMenuItem.image_url || ''}
-                                onChange={(e) => setEditingMenuItem({
-                                  ...editingMenuItem,
-                                  image_url: e.target.value.trim() || null
-                                })}
-                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                                placeholder="Image URL (optional)"
-                              />
-                            ) : (
-                              <div className="w-full h-full bg-red-100 rounded-lg border-2 border-red-200 flex items-center justify-center">
-                                <span className="text-red-400 text-xs text-center">No Image</span>
-                                    src={editingMenuItem.image_url}
+                              </div>
                             )}
                           </div>
                           <div className="flex-1">
