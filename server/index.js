@@ -47,7 +47,6 @@ const createTables = () => {
       price REAL NOT NULL,
       description TEXT,
       image_url TEXT,
-      image_url TEXT,
       is_available BOOLEAN DEFAULT 1,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )
