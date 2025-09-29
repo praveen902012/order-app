@@ -94,14 +94,14 @@ class ApiService {
     return this.request<Table[]>('/api/tables');
   }
 
-  async addTable(tableNumber: string): Promise<Table> {
+  async addTable(tableData: {
+    table_number: string;
+    floor?: string;
+    seating_capacity?: number;
+  }): Promise<Table> {
     return this.request<Table>('/api/tables', {
       method: 'POST',
-      body: JSON.stringify({ 
-        table_number: tableNumber,
-        floor: 'Ground Floor',
-        seating_capacity: 4
-      }),
+      body: JSON.stringify(tableData),
     });
   }
 

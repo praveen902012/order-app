@@ -40,17 +40,11 @@ export const TableManagement: React.FC = () => {
     if (!newTable.table_number.trim()) return;
     
     try {
-      // Use the API service to add table with all fields
-      const response = await fetch('http://localhost:3001/api/tables', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          table_number: newTable.table_number.trim(),
-          floor: newTable.floor,
-          seating_capacity: newTable.seating_capacity
-        }),
+      await apiService.addTable({
+        table_number: newTable.table_number.trim(),
+        floor: newTable.floor,
+        seating_capacity: newTable.seating_capacity
+      });
       });
       
       if (!response.ok) {
@@ -78,7 +72,11 @@ export const TableManagement: React.FC = () => {
 
   const handleUpdateTable = async (tableId: string) => {
     try {
-      await apiService.updateTable(tableId, editingData);
+      await apiService.updateTable(tableId, {
+        table_number: editingData.table_number,
+        floor: editingData.floor,
+        seating_capacity: editingData.seating_capacity
+      });
       setEditingTable(null);
       loadTables();
     } catch (error) {
