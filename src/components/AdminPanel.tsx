@@ -1,75 +1,30 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Calendar, ListFilter as Filter, Download, Eye, RefreshCw, ChevronLeft, ChevronRight, Clock, User, Hash, MapPin } from 'lucide-react';
+import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
 import { apiService } from '../services/api';
 import { Table, MenuItem } from '../types/database';
 
-interface OrderSearchResult {
-  id: string;
-  unique_code: string;
-  status: string;
-  created_at: string;
-  table_number: string;
-  order_items: Array<{
-    quantity: number;
-    name: string;
-    price: number;
-    category: string;
-  }>;
-  mobile_numbers: string[];
-  total: number;
-  item_count: number;
-  formatted_date: string;
-  time_ago: string;
-}
-
-interface SearchFilters {
-  tableNumber: string;
-  mobileNumber: string;
-  orderCode: string;
-  status: string;
-  startDate: string;
-  endDate: string;
-}
-
-interface PaginationInfo {
-  total: number;
-  limit: number;
-  offset: number;
-  pages: number;
-  current_page: number;
-}
-
 export const AdminPanel: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'search' | 'tables' | 'menu'>('search');
-  const [searchResults, setSearchResults] = useState<OrderSearchResult[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [pagination, setPagination] = useState<PaginationInfo>({
-    total: 0,
-    limit: 20,
-    offset: 0,
-    pages: 0,
-    current_page: 1
-  });
-  
-  const [filters, setFilters] = useState<SearchFilters>({
-    tableNumber: '',
-    mobileNumber: '',
-    orderCode: '',
-    status: '',
-    startDate: '',
-    endDate: ''
-  });
-
+  const [activeTab, setActiveTab] = useState<'tables' | 'menu'>('tables');
   const [tables, setTables] = useState<Table[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [selectedOrder, setSelectedOrder] = useState<OrderSearchResult | null>(null);
-  const [showOrderDetails, setShowOrderDetails] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [editingTable, setEditingTable] = useState<string | null>(null);
+  const [editingMenu, setEditingMenu] = useState<string | null>(null);
+  const [newTableNumber, setNewTableNumber] = useState('');
+  const [showAddTable, setShowAddTable] = useState(false);
+  const [showAddMenu, setShowAddMenu] = useState(false);
+  const [newMenuItem, setNewMenuItem] = useState({
+    name: '',
+    category: 'Starters',
+    price: 0,
+    description: '',
+    image_url: '',
+    is_available: true
+  });
 
   useEffect(() => {
     loadTables();
     loadMenuItems();
-    // Load initial search results
-    handleSearch();
   }, []);
 
   const loadTables = async () => {
@@ -78,6 +33,8 @@ export const AdminPanel: React.FC = () => {
       setTables(tablesData);
     } catch (error) {
       console.error('Failed to load tables:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -90,464 +47,97 @@ export const AdminPanel: React.FC = () => {
     }
   };
 
-  const handleSearch = async (newOffset: number = 0) => {
-    setLoading(true);
+  const handleAddTable = async () => {
+    if (!newTableNumber.trim()) return;
+    
     try {
-      const params = new URLSearchParams();
-      
-      if (filters.tableNumber) params.append('tableNumber', filters.tableNumber);
-      if (filters.mobileNumber) params.append('mobileNumber', filters.mobileNumber);
-      if (filters.orderCode) params.append('orderCode', filters.orderCode);
-      if (filters.status) params.append('status', filters.status);
-      if (filters.startDate) params.append('startDate', filters.startDate);
-      if (filters.endDate) params.append('endDate', filters.endDate);
-      
-      params.append('limit', pagination.limit.toString());
-      params.append('offset', newOffset.toString());
-
-      const response = await fetch(`http://localhost:3001/api/orders/search?${params.toString()}`);
-      const data = await response.json();
-      
-      setSearchResults(data.orders || []);
-      setPagination(data.pagination || pagination);
+      await apiService.addTable(newTableNumber.trim());
+      setNewTableNumber('');
+      setShowAddTable(false);
+      loadTables();
     } catch (error) {
-      console.error('Search failed:', error);
-      setSearchResults([]);
-    } finally {
-      setLoading(false);
+      console.error('Failed to add table:', error);
+      alert('Failed to add table. Please try again.');
     }
   };
 
-  const handleFilterChange = (key: keyof SearchFilters, value: string) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
-  };
-
-  const clearFilters = () => {
-    setFilters({
-      tableNumber: '',
-      mobileNumber: '',
-      orderCode: '',
-      status: '',
-      startDate: '',
-      endDate: ''
-    });
-  };
-
-  const handlePageChange = (newPage: number) => {
-    const newOffset = (newPage - 1) * pagination.limit;
-    handleSearch(newOffset);
-  };
-
-  const exportResults = () => {
-    const csvContent = [
-      ['Order Code', 'Table', 'Status', 'Date', 'Items', 'Total', 'Mobile Numbers'].join(','),
-      ...searchResults.map(order => [
-        order.unique_code,
-        order.table_number,
-        order.status,
-        order.formatted_date,
-        order.item_count,
-        `$${order.total.toFixed(2)}`,
-        order.mobile_numbers.join('; ')
-      ].join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `order-search-results-${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'Preparing':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'Ready':
-        return 'bg-green-100 text-green-800 border-green-200';
-      case 'Served':
-        return 'bg-gray-100 text-gray-800 border-gray-200';
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+  const handleUpdateTable = async (tableId: string, tableNumber: string) => {
+    try {
+      await apiService.updateTable(tableId, tableNumber);
+      setEditingTable(null);
+      loadTables();
+    } catch (error) {
+      console.error('Failed to update table:', error);
+      alert('Failed to update table. Please try again.');
     }
   };
 
-  const renderSearchTab = () => (
-    <div className="space-y-6">
-      {/* Search Filters */}
-      <div className="bg-white rounded-xl shadow-sm border p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Search className="w-5 h-5 text-gray-600" />
-          <h3 className="text-lg font-semibold text-gray-900">Search Orders</h3>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              <MapPin className="w-4 h-4 inline mr-1" />
-              Table Number
-            </label>
-            <input
-              type="text"
-              value={filters.tableNumber}
-              onChange={(e) => handleFilterChange('tableNumber', e.target.value)}
-              placeholder="e.g., T01, T02..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              <User className="w-4 h-4 inline mr-1" />
-              Mobile Number
-            </label>
-            <input
-              type="text"
-              value={filters.mobileNumber}
-              onChange={(e) => handleFilterChange('mobileNumber', e.target.value)}
-              placeholder="e.g., 123456..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              <Hash className="w-4 h-4 inline mr-1" />
-              Order Code
-            </label>
-            <input
-              type="text"
-              value={filters.orderCode}
-              onChange={(e) => handleFilterChange('orderCode', e.target.value)}
-              placeholder="e.g., ABC123..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              <Filter className="w-4 h-4 inline mr-1" />
-              Status
-            </label>
-            <select
-              value={filters.status}
-              onChange={(e) => handleFilterChange('status', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">All Statuses</option>
-              <option value="Pending">Pending</option>
-              <option value="Preparing">Preparing</option>
-              <option value="Ready">Ready</option>
-              <option value="Served">Served</option>
-            </select>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              <Calendar className="w-4 h-4 inline mr-1" />
-              Start Date
-            </label>
-            <input
-              type="date"
-              value={filters.startDate}
-              onChange={(e) => handleFilterChange('startDate', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              <Calendar className="w-4 h-4 inline mr-1" />
-              End Date
-            </label>
-            <input
-              type="date"
-              value={filters.endDate}
-              onChange={(e) => handleFilterChange('endDate', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-        </div>
-        
-        <div className="flex gap-3">
-          <button
-            onClick={() => handleSearch(0)}
-            disabled={loading}
-            className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 disabled:bg-blue-300 transition-colors flex items-center gap-2"
-          >
-            {loading ? (
-              <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
-            ) : (
-              <Search className="w-4 h-4" />
-            )}
-            Search
-          </button>
-          
-          <button
-            onClick={clearFilters}
-            className="bg-gray-100 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-200 transition-colors"
-          >
-            Clear Filters
-          </button>
-          
-          {searchResults.length > 0 && (
-            <button
-              onClick={exportResults}
-              className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2"
-            >
-              <Download className="w-4 h-4" />
-              Export CSV
-            </button>
-          )}
-        </div>
-      </div>
+  const handleDeleteTable = async (tableId: string) => {
+    if (!confirm('Are you sure you want to delete this table?')) return;
+    
+    try {
+      await apiService.deleteTable(tableId);
+      loadTables();
+    } catch (error) {
+      console.error('Failed to delete table:', error);
+      alert('Failed to delete table. Please try again.');
+    }
+  };
 
-      {/* Search Results */}
-      <div className="bg-white rounded-xl shadow-sm border">
-        <div className="p-6 border-b">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900">Search Results</h3>
-              <p className="text-sm text-gray-500">
-                {pagination.total} orders found
-                {Object.values(filters).some(v => v) && ' (filtered)'}
-              </p>
-            </div>
-            <button
-              onClick={() => handleSearch(pagination.offset)}
-              disabled={loading}
-              className="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
-            </button>
-          </div>
+  const handleAddMenuItem = async () => {
+    if (!newMenuItem.name.trim() || newMenuItem.price <= 0) return;
+    
+    try {
+      await apiService.addMenuItem(newMenuItem);
+      setNewMenuItem({
+        name: '',
+        category: 'Starters',
+        price: 0,
+        description: '',
+        image_url: '',
+        is_available: true
+      });
+      setShowAddMenu(false);
+      loadMenuItems();
+    } catch (error) {
+      console.error('Failed to add menu item:', error);
+      alert('Failed to add menu item. Please try again.');
+    }
+  };
+
+  const handleUpdateMenuItem = async (itemId: string, updates: Partial<MenuItem>) => {
+    try {
+      await apiService.updateMenuItem(itemId, updates);
+      setEditingMenu(null);
+      loadMenuItems();
+    } catch (error) {
+      console.error('Failed to update menu item:', error);
+      alert('Failed to update menu item. Please try again.');
+    }
+  };
+
+  const handleDeleteMenuItem = async (itemId: string) => {
+    if (!confirm('Are you sure you want to delete this menu item?')) return;
+    
+    try {
+      await apiService.deleteMenuItem(itemId);
+      loadMenuItems();
+    } catch (error) {
+      console.error('Failed to delete menu item:', error);
+      alert('Failed to delete menu item. Please try again.');
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading admin panel...</p>
         </div>
-        
-        {loading ? (
-          <div className="p-12 text-center">
-            <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-            <p className="text-gray-600">Searching orders...</p>
-          </div>
-        ) : searchResults.length === 0 ? (
-          <div className="p-12 text-center">
-            <Search className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No orders found</h3>
-            <p className="text-gray-500">Try adjusting your search filters</p>
-          </div>
-        ) : (
-          <>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Order Details
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Customer Info
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Items & Total
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Date
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {searchResults.map((order) => (
-                    <tr key={order.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">
-                            {order.unique_code}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            Table {order.table_number}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {order.mobile_numbers.length > 0 ? (
-                            order.mobile_numbers.map((mobile, idx) => (
-                              <div key={idx} className="text-xs text-gray-600">
-                                {mobile}
-                              </div>
-                            ))
-                          ) : (
-                            <span className="text-gray-400">No mobile data</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full border ${getStatusColor(order.status)}`}>
-                          {order.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {order.item_count} items
-                        </div>
-                        <div className="text-sm font-medium text-green-600">
-                          ${order.total.toFixed(2)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {new Date(order.created_at).toLocaleDateString()}
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {order.time_ago}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button
-                          onClick={() => {
-                            setSelectedOrder(order);
-                            setShowOrderDetails(true);
-                          }}
-                          className="text-blue-600 hover:text-blue-900 flex items-center gap-1"
-                        >
-                          <Eye className="w-4 h-4" />
-                          View
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            
-            {/* Pagination */}
-            {pagination.pages > 1 && (
-              <div className="px-6 py-4 border-t bg-gray-50 flex items-center justify-between">
-                <div className="text-sm text-gray-700">
-                  Showing {pagination.offset + 1} to {Math.min(pagination.offset + pagination.limit, pagination.total)} of {pagination.total} results
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handlePageChange(pagination.current_page - 1)}
-                    disabled={pagination.current_page <= 1}
-                    className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  
-                  <span className="text-sm text-gray-700">
-                    Page {pagination.current_page} of {pagination.pages}
-                  </span>
-                  
-                  <button
-                    onClick={() => handlePageChange(pagination.current_page + 1)}
-                    disabled={pagination.current_page >= pagination.pages}
-                    className="px-3 py-1 border border-gray-300 rounded-md text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            )}
-          </>
-        )}
       </div>
-    </div>
-  );
-
-  const renderTablesTab = () => (
-    <div className="bg-white rounded-xl shadow-sm border p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Restaurant Tables</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {tables.map((table) => (
-          <div
-            key={table.id}
-            className={`p-4 rounded-lg border-2 ${
-              table.locked
-                ? 'border-red-200 bg-red-50'
-                : 'border-green-200 bg-green-50'
-            }`}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="font-medium text-gray-900">
-                Table {table.table_number}
-              </h4>
-              <span
-                className={`px-2 py-1 text-xs rounded-full ${
-                  table.locked
-                    ? 'bg-red-100 text-red-800'
-                    : 'bg-green-100 text-green-800'
-                }`}
-              >
-                {table.locked ? 'Occupied' : 'Available'}
-              </span>
-            </div>
-            {table.unique_code && (
-              <p className="text-sm text-gray-600">
-                Code: {table.unique_code}
-              </p>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  const renderMenuTab = () => (
-    <div className="bg-white rounded-xl shadow-sm border p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">Menu Items</h3>
-      <div className="space-y-4">
-        {['Starters', 'Mains', 'Drinks', 'Desserts'].map((category) => (
-          <div key={category}>
-            <h4 className="font-medium text-gray-900 mb-2">{category}</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {menuItems
-                .filter((item) => item.category === category)
-                .map((item) => (
-                  <div
-                    key={item.id}
-                    className="p-3 border border-gray-200 rounded-lg"
-                  >
-                    <div className="flex justify-between items-start mb-1">
-                      <h5 className="font-medium text-gray-900 text-sm">
-                        {item.name}
-                      </h5>
-                      <span className="text-sm font-semibold text-green-600">
-                        ${item.price.toFixed(2)}
-                      </span>
-                    </div>
-                    {item.description && (
-                      <p className="text-xs text-gray-600 mb-2">
-                        {item.description}
-                      </p>
-                    )}
-                    <span
-                      className={`inline-flex px-2 py-1 text-xs rounded-full ${
-                        item.is_available
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}
-                    >
-                      {item.is_available ? 'Available' : 'Unavailable'}
-                    </span>
-                  </div>
-                ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -556,130 +146,338 @@ export const AdminPanel: React.FC = () => {
         <div className="mb-6">
           <div className="border-b border-gray-200">
             <nav className="-mb-px flex space-x-8">
-              {[
-                { id: 'search', label: 'Order Search', icon: Search },
-                { id: 'tables', label: 'Tables', icon: MapPin },
-                { id: 'menu', label: 'Menu', icon: Filter }
-              ].map(({ id, label, icon: Icon }) => (
-                <button
-                  key={id}
-                  onClick={() => setActiveTab(id as any)}
-                  className={`flex items-center gap-2 py-2 px-1 border-b-2 font-medium text-sm ${
-                    activeTab === id
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  {label}
-                </button>
-              ))}
+              <button
+                onClick={() => setActiveTab('tables')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'tables'
+                    ? 'border-orange-500 text-orange-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Tables Management
+              </button>
+              <button
+                onClick={() => setActiveTab('menu')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'menu'
+                    ? 'border-orange-500 text-orange-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Menu Management
+              </button>
             </nav>
           </div>
         </div>
 
-        {/* Tab Content */}
-        {activeTab === 'search' && renderSearchTab()}
-        {activeTab === 'tables' && renderTablesTab()}
-        {activeTab === 'menu' && renderMenuTab()}
-      </div>
-
-      {/* Order Details Modal */}
-      {showOrderDetails && selectedOrder && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col">
-            <div className="p-6 border-b">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Order Details</h3>
-                <button
-                  onClick={() => setShowOrderDetails(false)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  ×
-                </button>
-              </div>
-            </div>
-            
-            <div className="flex-1 overflow-y-auto p-6">
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Order Code</label>
-                    <p className="text-lg font-semibold">{selectedOrder.unique_code}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Table</label>
-                    <p className="text-lg font-semibold">{selectedOrder.table_number}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Status</label>
-                    <span className={`inline-flex px-2 py-1 text-sm font-semibold rounded-full border ${getStatusColor(selectedOrder.status)}`}>
-                      {selectedOrder.status}
-                    </span>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Date</label>
-                    <p className="text-sm">{selectedOrder.formatted_date}</p>
-                    <p className="text-xs text-gray-500">{selectedOrder.time_ago}</p>
-                  </div>
-                </div>
-                
-                {selectedOrder.mobile_numbers.length > 0 && (
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Customer Mobile Numbers</label>
-                    <div className="mt-1">
-                      {selectedOrder.mobile_numbers.map((mobile, idx) => (
-                        <span key={idx} className="inline-block bg-gray-100 px-2 py-1 rounded text-sm mr-2 mb-1">
-                          {mobile}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-                <div>
-                  <label className="text-sm font-medium text-gray-500 mb-2 block">Order Items</label>
-                  <div className="space-y-2">
-                    {selectedOrder.order_items.map((item, idx) => (
-                      <div key={idx} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                        <div>
-                          <h4 className="font-medium">{item.name}</h4>
-                          <p className="text-sm text-gray-600">{item.category}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-medium">×{item.quantity}</p>
-                          <p className="text-sm text-gray-600">${(item.price * item.quantity).toFixed(2)}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                <div className="border-t pt-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-lg font-semibold">Total:</span>
-                    <span className="text-xl font-bold text-green-600">
-                      ${selectedOrder.total.toFixed(2)}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-500 mt-1">
-                    {selectedOrder.item_count} items total
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="p-6 border-t">
+        {/* Tables Tab */}
+        {activeTab === 'tables' && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-900">Tables Management</h2>
               <button
-                onClick={() => setShowOrderDetails(false)}
-                className="w-full bg-gray-100 text-gray-700 py-3 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                onClick={() => setShowAddTable(true)}
+                className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-2"
               >
-                Close
+                <Plus className="w-4 h-4" />
+                Add Table
               </button>
             </div>
+
+            {/* Add Table Form */}
+            {showAddTable && (
+              <div className="bg-white rounded-lg p-6 shadow-sm border">
+                <h3 className="text-lg font-semibold mb-4">Add New Table</h3>
+                <div className="flex gap-4 items-end">
+                  <div className="flex-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Table Number
+                    </label>
+                    <input
+                      type="text"
+                      value={newTableNumber}
+                      onChange={(e) => setNewTableNumber(e.target.value)}
+                      placeholder="e.g., T11"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleAddTable}
+                      className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2"
+                    >
+                      <Save className="w-4 h-4" />
+                      Save
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowAddTable(false);
+                        setNewTableNumber('');
+                      }}
+                      className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors flex items-center gap-2"
+                    >
+                      <X className="w-4 h-4" />
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Tables Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {tables.map((table) => (
+                <div
+                  key={table.id}
+                  className={`p-4 rounded-lg border-2 ${
+                    table.locked
+                      ? 'border-red-200 bg-red-50'
+                      : 'border-green-200 bg-green-50'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    {editingTable === table.id ? (
+                      <input
+                        type="text"
+                        defaultValue={table.table_number}
+                        onBlur={(e) => handleUpdateTable(table.id, e.target.value)}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            handleUpdateTable(table.id, e.currentTarget.value);
+                          }
+                        }}
+                        className="font-medium text-gray-900 bg-white border border-gray-300 rounded px-2 py-1 text-sm"
+                        autoFocus
+                      />
+                    ) : (
+                      <h4 className="font-medium text-gray-900">
+                        Table {table.table_number}
+                      </h4>
+                    )}
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => setEditingTable(editingTable === table.id ? null : table.id)}
+                        className="text-blue-600 hover:text-blue-800 p-1"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteTable(table.id)}
+                        className="text-red-600 hover:text-red-800 p-1"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span
+                      className={`px-2 py-1 text-xs rounded-full ${
+                        table.locked
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-green-100 text-green-800'
+                      }`}
+                    >
+                      {table.locked ? 'Occupied' : 'Available'}
+                    </span>
+                    {table.unique_code && (
+                      <span className="text-xs text-gray-500 font-mono">
+                        {table.unique_code}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* Menu Tab */}
+        {activeTab === 'menu' && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-900">Menu Management</h2>
+              <button
+                onClick={() => setShowAddMenu(true)}
+                className="bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Add Menu Item
+              </button>
+            </div>
+
+            {/* Add Menu Item Form */}
+            {showAddMenu && (
+              <div className="bg-white rounded-lg p-6 shadow-sm border">
+                <h3 className="text-lg font-semibold mb-4">Add New Menu Item</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Name
+                    </label>
+                    <input
+                      type="text"
+                      value={newMenuItem.name}
+                      onChange={(e) => setNewMenuItem(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="Item name"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Category
+                    </label>
+                    <select
+                      value={newMenuItem.category}
+                      onChange={(e) => setNewMenuItem(prev => ({ ...prev, category: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    >
+                      <option value="Starters">Starters</option>
+                      <option value="Mains">Mains</option>
+                      <option value="Drinks">Drinks</option>
+                      <option value="Desserts">Desserts</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Price
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={newMenuItem.price}
+                      onChange={(e) => setNewMenuItem(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                      placeholder="0.00"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Image URL
+                    </label>
+                    <input
+                      type="url"
+                      value={newMenuItem.image_url}
+                      onChange={(e) => setNewMenuItem(prev => ({ ...prev, image_url: e.target.value }))}
+                      placeholder="https://..."
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Description
+                    </label>
+                    <textarea
+                      value={newMenuItem.description}
+                      onChange={(e) => setNewMenuItem(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder="Item description"
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={newMenuItem.is_available}
+                        onChange={(e) => setNewMenuItem(prev => ({ ...prev, is_available: e.target.checked }))}
+                        className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">Available</span>
+                    </label>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleAddMenuItem}
+                    className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors flex items-center gap-2"
+                  >
+                    <Save className="w-4 h-4" />
+                    Save
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowAddMenu(false);
+                      setNewMenuItem({
+                        name: '',
+                        category: 'Starters',
+                        price: 0,
+                        description: '',
+                        image_url: '',
+                        is_available: true
+                      });
+                    }}
+                    className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors flex items-center gap-2"
+                  >
+                    <X className="w-4 h-4" />
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Menu Items by Category */}
+            {['Starters', 'Mains', 'Drinks', 'Desserts'].map((category) => (
+              <div key={category} className="bg-white rounded-lg p-6 shadow-sm border">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">{category}</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {menuItems
+                    .filter((item) => item.category === category)
+                    .map((item) => (
+                      <div
+                        key={item.id}
+                        className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <h4 className="font-medium text-gray-900">{item.name}</h4>
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() => setEditingMenu(editingMenu === item.id ? null : item.id)}
+                              className="text-blue-600 hover:text-blue-800 p-1"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteMenuItem(item.id)}
+                              className="text-red-600 hover:text-red-800 p-1"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-2">{item.description}</p>
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-lg font-semibold text-green-600">
+                            ${item.price.toFixed(2)}
+                          </span>
+                          <span
+                            className={`px-2 py-1 text-xs rounded-full ${
+                              item.is_available
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}
+                          >
+                            {item.is_available ? 'Available' : 'Unavailable'}
+                          </span>
+                        </div>
+                        {item.image_url && (
+                          <img
+                            src={item.image_url}
+                            alt={item.name}
+                            className="w-full h-32 object-cover rounded-lg"
+                            onError={(e) => {
+                              const target = e.target as HTMLImageElement;
+                              target.style.display = 'none';
+                            }}
+                          />
+                        )}
+                      </div>
+                    ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
