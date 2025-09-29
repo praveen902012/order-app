@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Calendar, Filter, Download, Eye, RefreshCw, ChevronLeft, ChevronRight, Clock, User, Hash, MapPin } from 'lucide-react';
+import { Search, Calendar, ListFilter as Filter, Download, Eye, RefreshCw, ChevronLeft, ChevronRight, Clock, User, Hash, MapPin } from 'lucide-react';
 import { apiService } from '../services/api';
 import { Table, MenuItem } from '../types/database';
 
