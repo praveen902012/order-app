@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, CreditCard as Edit, Trash2, Save, X } from 'lucide-react';
+import { Plus, CreditCard as Edit, Trash2, Save, X, Image as ImageIcon } from 'lucide-react';
 import { apiService } from '../services/api';
 import { MenuItem } from '../types/database';
 
@@ -226,47 +226,17 @@ export const AdminPanel: React.FC = () => {
                       key={item.id}
                       className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
                     >
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-medium text-gray-900">{item.name}</h4>
-                        <div className="flex gap-1">
-                          <button
-                            onClick={() => setEditingMenu(editingMenu === item.id ? null : item.id)}
-                            className="text-blue-600 hover:text-blue-800 p-1"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteMenuItem(item.id)}
-                            className="text-red-600 hover:text-red-800 p-1"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                      <p className="text-sm text-gray-600 mb-2">{item.description}</p>
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-lg font-semibold text-green-600">
-                          ${item.price.toFixed(2)}
-                        </span>
-                        <span
-                          className={`px-2 py-1 text-xs rounded-full ${
-                            item.is_available
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-800'
-                          }`}
-                        >
-                          {item.is_available ? 'Available' : 'Unavailable'}
-                        </span>
-                      </div>
-                      {item.image_url && (
-                        <img
-                          src={item.image_url}
-                          alt={item.name}
-                          className="w-full h-32 object-cover rounded-lg"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
-                          }}
+                      {editingMenu === item.id ? (
+                        <EditMenuItemForm
+                          item={item}
+                          onSave={(updates) => handleUpdateMenuItem(item.id, updates)}
+                          onCancel={() => setEditingMenu(null)}
+                        />
+                      ) : (
+                        <MenuItemDisplay
+                          item={item}
+                          onEdit={() => setEditingMenu(item.id)}
+                          onDelete={() => handleDeleteMenuItem(item.id)}
                         />
                       )}
                     </div>
