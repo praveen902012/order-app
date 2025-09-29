@@ -40,16 +40,22 @@ export const TableManagement: React.FC = () => {
     if (!newTable.table_number.trim()) return;
     
     try {
-      await apiService.addTable(newTable.table_number.trim());
-      // Since the API doesn't support floor and seating capacity yet, we'll update it separately
-      const allTables = await apiService.getAllTables();
-      const addedTable = allTables.find(t => t.table_number === newTable.table_number.trim());
-      if (addedTable) {
-        await apiService.updateTable(addedTable.id, {
+      // Use the API service to add table with all fields
+      const response = await fetch('http://localhost:3001/api/tables', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           table_number: newTable.table_number.trim(),
           floor: newTable.floor,
           seating_capacity: newTable.seating_capacity
-        });
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
       
       setNewTable({ table_number: '', floor: 'Ground Floor', seating_capacity: 4 });
@@ -57,7 +63,7 @@ export const TableManagement: React.FC = () => {
       loadTables();
     } catch (error) {
       console.error('Failed to add table:', error);
-      alert('Failed to add table. Please try again.');
+      alert(`Failed to add table: ${error.message}`);
     }
   };
 

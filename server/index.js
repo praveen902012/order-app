@@ -310,10 +310,28 @@ app.get('/api/tables/:tableNumber', (req, res) => {
 
 app.get('/api/tables', (req, res) => {
   try {
+    // First, add the columns if they don't exist (for backward compatibility)
+    try {
+      db.exec(`
+        ALTER TABLE tables ADD COLUMN floor TEXT DEFAULT 'Ground Floor';
+      `);
+    } catch (e) {
+      // Column already exists, ignore error
+    }
+    
+    try {
+      db.exec(`
+        ALTER TABLE tables ADD COLUMN seating_capacity INTEGER DEFAULT 4;
+      `);
+    } catch (e) {
+      // Column already exists, ignore error
+    }
+    
     const stmt = db.prepare('SELECT * FROM tables ORDER BY table_number');
     const tables = stmt.all();
     res.json(tables);
   } catch (error) {
+    console.error('Error fetching tables:', error);
     res.status(500).json({ error: error.message });
   }
 });
