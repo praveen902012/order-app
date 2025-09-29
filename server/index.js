@@ -320,9 +320,9 @@ app.get('/api/tables', (req, res) => {
 
 app.post('/api/tables', (req, res) => {
   try {
-    const { table_number } = req.body;
-    const stmt = db.prepare('INSERT INTO tables (table_number) VALUES (?)');
-    stmt.run(table_number);
+    const { table_number, floor, seating_capacity } = req.body;
+    const stmt = db.prepare('INSERT INTO tables (table_number, floor, seating_capacity) VALUES (?, ?, ?)');
+    stmt.run(table_number, floor || 'Ground Floor', seating_capacity || 4);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -331,9 +331,29 @@ app.post('/api/tables', (req, res) => {
 
 app.put('/api/tables/:id', (req, res) => {
   try {
-    const { table_number } = req.body;
-    const stmt = db.prepare('UPDATE tables SET table_number = ? WHERE id = ?');
-    stmt.run(table_number, req.params.id);
+    const { table_number, floor, seating_capacity } = req.body;
+    const fields = [];
+    const values = [];
+    
+    if (table_number !== undefined) {
+      fields.push('table_number = ?');
+      values.push(table_number);
+    }
+    if (floor !== undefined) {
+      fields.push('floor = ?');
+      values.push(floor);
+    }
+    if (seating_capacity !== undefined) {
+      fields.push('seating_capacity = ?');
+      values.push(seating_capacity);
+    }
+
+    if (fields.length > 0) {
+      values.push(req.params.id);
+      const stmt = db.prepare(`UPDATE tables SET ${fields.join(', ')} WHERE id = ?`);
+      stmt.run(...values);
+    }
+    
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });

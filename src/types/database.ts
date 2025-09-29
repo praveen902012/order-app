@@ -11,6 +11,8 @@ export interface Table {
   table_number: string;
   unique_code: string | null;
   locked: boolean;
+  floor: string;
+  seating_capacity: number;
   created_at: string;
 }
 
