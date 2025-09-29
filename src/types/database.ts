@@ -13,6 +13,8 @@ export interface Table {
   locked: boolean;
   floor: string;
   seating_capacity: number;
+  floor: string;
+  seating_capacity: number;
   created_at: string;
 }
 
