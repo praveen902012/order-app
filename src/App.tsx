@@ -8,10 +8,11 @@ import { Menu } from './components/Menu';
 import { KitchenDashboard } from './components/KitchenDashboard';
 import { QRGenerator } from './components/QRGenerator';
 import { AdminPanel } from './components/AdminPanel';
+import { TableManagement } from './components/TableManagement';
 import { Order } from './types/database';
 import { apiService } from './services/api';
 
-type AppMode = 'home' | 'customer' | 'kitchen' | 'qr-generator' | 'admin' | 'admin-login';
+type AppMode = 'home' | 'customer' | 'kitchen' | 'qr-generator' | 'admin' | 'tables' | 'admin-login';
 type CustomerState = 'login' | 'code-entry' | 'menu';
 
 function App() {
@@ -104,7 +105,7 @@ function App() {
     setAdminLoginError('');
   };
 
-  const handleAdminNavigate = (page: 'kitchen' | 'qr-generator' | 'admin') => {
+  const handleAdminNavigate = (page: 'kitchen' | 'qr-generator' | 'admin' | 'tables') => {
     setMode(page);
   };
 
@@ -279,6 +280,20 @@ function App() {
           onHome={handleAdminHome}
         />
         <AdminPanel />
+      </div>
+    );
+  }
+
+  if (mode === 'tables') {
+    return (
+      <div>
+        <AdminNavigation
+          currentPage="tables"
+          onNavigate={handleAdminNavigate}
+          onLogout={handleAdminLogout}
+          onHome={handleAdminHome}
+        />
+        <TableManagement />
       </div>
     );
   }
