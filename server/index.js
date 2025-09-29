@@ -357,12 +357,55 @@ app.post('/api/tables', (req, res) => {
       // Column already exists, ignore error
     }
     
-    const stmt = db.prepare('INSERT INTO tables (table_number, floor, seating_capacity) VALUES (?, ?, ?)');
-    const result = stmt.run(table_number, floor || 'Ground Floor', seating_capacity || 4);
+    // Check if columns exist before inserting
+    const tableInfo = db.pragma('table_info(tables)');
+    const hasFloor = tableInfo.some(col => col.name === 'floor');
+    const hasSeatingCapacity = tableInfo.some(col => col.name === 'seating_capacity');
+    
+    let stmt, result;
+    
+    if (hasFloor && hasSeatingCapacity) {
+      // Both columns exist, insert all fields
+      stmt = db.prepare('INSERT INTO tables (table_number, floor, seating_capacity) VALUES (?, ?, ?)');
+      result = stmt.run(table_number, floor || 'Ground Floor', seating_capacity || 4);
+    } else if (hasFloor) {
+      // Only floor column exists
+      stmt = db.prepare('INSERT INTO tables (table_number, floor) VALUES (?, ?)');
+      result = stmt.run(table_number, floor || 'Ground Floor');
+    } else if (hasSeatingCapacity) {
+      // Only seating_capacity column exists
+      stmt = db.prepare('INSERT INTO tables (table_number, seating_capacity) VALUES (?, ?)');
+      result = stmt.run(table_number, seating_capacity || 4);
+    } else {
+      // Neither column exists, insert only table_number
+      stmt = db.prepare('INSERT INTO tables (table_number) VALUES (?)');
+      result = stmt.run(table_number);
+    }
     
     // Get the created table
     const getTableStmt = db.prepare('SELECT * FROM tables WHERE rowid = ?');
     const newTable = getTableStmt.get(result.lastInsertRowid);
+    
+    // If columns were missing, update the table with default values
+    if (!hasFloor || !hasSeatingCapacity) {
+      const updateFields = [];
+      const updateValues = [];
+      
+      if (!hasFloor && floor) {
+        updateFields.push('floor = ?');
+        updateValues.push(floor);
+      }
+      if (!hasSeatingCapacity && seating_capacity) {
+        updateFields.push('seating_capacity = ?');
+        updateValues.push(seating_capacity);
+      }
+      
+      if (updateFields.length > 0) {
+        updateValues.push(newTable.id);
+        const updateStmt = db.prepare(`UPDATE tables SET ${updateFields.join(', ')} WHERE id = ?`);
+        updateStmt.run(...updateValues);
+      }
+    }
     
     res.json({ success: true });
   } catch (error) {
