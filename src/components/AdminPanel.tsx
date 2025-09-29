@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Save, X } from 'lucide-react';
+import { Plus, CreditCard as Edit, Trash2, Save, X } from 'lucide-react';
 import { apiService } from '../services/api';
 import { Table, MenuItem } from '../types/database';
 
