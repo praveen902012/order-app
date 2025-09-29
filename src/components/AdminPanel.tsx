@@ -77,6 +77,210 @@ export const AdminPanel: React.FC = () => {
     }
   };
 
+  // Menu Item Display Component
+  const MenuItemDisplay: React.FC<{
+    item: MenuItem;
+    onEdit: () => void;
+    onDelete: () => void;
+  }> = ({ item, onEdit, onDelete }) => (
+    <>
+      <div className="flex justify-between items-start mb-3">
+        <h4 className="font-medium text-gray-900 text-lg">{item.name}</h4>
+        <div className="flex gap-1">
+          <button
+            onClick={onEdit}
+            className="text-blue-600 hover:text-blue-800 p-2 rounded-lg hover:bg-blue-50 transition-colors"
+            title="Edit item"
+          >
+            <Edit className="w-4 h-4" />
+          </button>
+          <button
+            onClick={onDelete}
+            className="text-red-600 hover:text-red-800 p-2 rounded-lg hover:bg-red-50 transition-colors"
+            title="Delete item"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+      
+      {item.image_url && (
+        <div className="mb-3">
+          <img
+            src={item.image_url}
+            alt={item.name}
+            className="w-full h-32 object-cover rounded-lg border border-gray-200"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.style.display = 'none';
+            }}
+          />
+        </div>
+      )}
+      
+      <p className="text-sm text-gray-600 mb-3 line-clamp-2">{item.description}</p>
+      
+      <div className="flex justify-between items-center">
+        <span className="text-xl font-bold text-green-600">
+          ${item.price.toFixed(2)}
+        </span>
+        <span
+          className={`px-3 py-1 text-sm font-medium rounded-full ${
+            item.is_available
+              ? 'bg-green-100 text-green-800'
+              : 'bg-red-100 text-red-800'
+          }`}
+        >
+          {item.is_available ? 'Available' : 'Unavailable'}
+        </span>
+      </div>
+    </>
+  );
+
+  // Edit Menu Item Form Component
+  const EditMenuItemForm: React.FC<{
+    item: MenuItem;
+    onSave: (updates: Partial<MenuItem>) => void;
+    onCancel: () => void;
+  }> = ({ item, onSave, onCancel }) => {
+    const [formData, setFormData] = useState({
+      name: item.name,
+      category: item.category,
+      price: item.price,
+      description: item.description || '',
+      image_url: item.image_url || '',
+      is_available: item.is_available
+    });
+
+    const handleSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!formData.name.trim() || formData.price <= 0) {
+        alert('Please fill in all required fields');
+        return;
+      }
+      onSave(formData);
+    };
+
+    return (
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Name *
+          </label>
+          <input
+            type="text"
+            value={formData.name}
+            onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+            required
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Category *
+            </label>
+            <select
+              value={formData.category}
+              onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+            >
+              <option value="Starters">Starters</option>
+              <option value="Mains">Mains</option>
+              <option value="Drinks">Drinks</option>
+              <option value="Desserts">Desserts</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Price *
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              value={formData.price}
+              onChange={(e) => setFormData(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+              required
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Description
+          </label>
+          <textarea
+            value={formData.description}
+            onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+            rows={2}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+            placeholder="Brief description of the item"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            <ImageIcon className="w-4 h-4 inline mr-1" />
+            Image URL
+          </label>
+          <input
+            type="url"
+            value={formData.image_url}
+            onChange={(e) => setFormData(prev => ({ ...prev, image_url: e.target.value }))}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+            placeholder="https://example.com/image.jpg"
+          />
+          {formData.image_url && (
+            <div className="mt-2">
+              <img
+                src={formData.image_url}
+                alt="Preview"
+                className="w-full h-24 object-cover rounded border"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.style.display = 'none';
+                }}
+              />
+            </div>
+          )}
+        </div>
+
+        <div>
+          <label className="flex items-center">
+            <input
+              type="checkbox"
+              checked={formData.is_available}
+              onChange={(e) => setFormData(prev => ({ ...prev, is_available: e.target.checked }))}
+              className="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+            />
+            <span className="ml-2 text-sm text-gray-700">Available for ordering</span>
+          </label>
+        </div>
+
+        <div className="flex gap-2 pt-2">
+          <button
+            type="submit"
+            className="flex-1 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center gap-2"
+          >
+            <Save className="w-4 h-4" />
+            Save Changes
+          </button>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="flex-1 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors flex items-center justify-center gap-2"
+          >
+            <X className="w-4 h-4" />
+            Cancel
+          </button>
+        </div>
+      </form>
+    );
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
