@@ -45,12 +45,6 @@ export const TableManagement: React.FC = () => {
         floor: newTable.floor,
         seating_capacity: newTable.seating_capacity
       });
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
-      }
       
       setNewTable({ table_number: '', floor: 'Ground Floor', seating_capacity: 4 });
       setShowAddTable(false);
