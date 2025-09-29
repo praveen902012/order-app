@@ -12,7 +12,7 @@ import { TableManagement } from './components/TableManagement';
 import { Order } from './types/database';
 import { apiService } from './services/api';
 
-type AppMode = 'home' | 'customer' | 'kitchen' | 'qr-generator' | 'admin' | 'tables' | 'admin-login';
+type AppMode = 'home' | 'customer' | 'kitchen' | 'qr-generator' | 'admin' | 'tables' | 'menu' | 'admin-login';
 type CustomerState = 'login' | 'code-entry' | 'menu';
 
 function App() {
@@ -105,7 +105,7 @@ function App() {
     setAdminLoginError('');
   };
 
-  const handleAdminNavigate = (page: 'kitchen' | 'qr-generator' | 'admin' | 'tables') => {
+  const handleAdminNavigate = (page: 'kitchen' | 'qr-generator' | 'admin' | 'tables' | 'menu') => {
     setMode(page);
   };
 
@@ -275,6 +275,20 @@ function App() {
       <div>
         <AdminNavigation
           currentPage="admin"
+          onNavigate={handleAdminNavigate}
+          onLogout={handleAdminLogout}
+          onHome={handleAdminHome}
+        />
+        <AdminPanel />
+      </div>
+    );
+  }
+
+  if (mode === 'menu') {
+    return (
+      <div>
+        <AdminNavigation
+          currentPage="menu"
           onNavigate={handleAdminNavigate}
           onLogout={handleAdminLogout}
           onHome={handleAdminHome}

@@ -1,9 +1,9 @@
 import React from 'react';
-import { Utensils, QrCode, Settings, LogOut, Hop as Home } from 'lucide-react';
+import { Utensils, QrCode, Settings, LogOut, Hop as Home, Menu } from 'lucide-react';
 
 interface AdminNavigationProps {
-  currentPage: 'kitchen' | 'qr-generator' | 'admin' | 'tables';
-  onNavigate: (page: 'kitchen' | 'qr-generator' | 'admin' | 'tables') => void;
+  currentPage: 'kitchen' | 'qr-generator' | 'admin' | 'tables' | 'menu';
+  onNavigate: (page: 'kitchen' | 'qr-generator' | 'admin' | 'tables' | 'menu') => void;
   onLogout: () => void;
   onHome: () => void;
 }
@@ -28,16 +28,22 @@ export const AdminNavigation: React.FC<AdminNavigationProps> = ({
       description: 'Generate table QR codes'
     },
     {
-      id: 'admin' as const,
-      title: 'Admin Panel',
-      icon: <Settings className="w-5 h-5" />,
-      description: 'Manage tables & menu'
+      id: 'menu' as const,
+      title: 'Menu Management',
+      icon: <Menu className="w-5 h-5" />,
+      description: 'Manage menu items'
     },
     {
       id: 'tables' as const,
       title: 'Tables',
       icon: <Settings className="w-5 h-5" />,
       description: 'Manage restaurant tables'
+    },
+    {
+      id: 'admin' as const,
+      title: 'Admin Panel',
+      icon: <Settings className="w-5 h-5" />,
+      description: 'System administration'
     }
   ];
 
