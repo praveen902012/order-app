@@ -1053,6 +1053,172 @@ app.get('/api/orders/history', (req, res) => {
   }
 });
 
+// Dedicated order search endpoint
+app.get('/api/orders/search', (req, res) => {
+  try {
+    const { 
+      tableNumber, 
+      mobileNumber, 
+      orderCode,
+      status,
+      startDate, 
+      endDate, 
+      limit = 100,
+      offset = 0 
+    } = req.query;
+    
+    let whereClause = "WHERE 1=1";
+    let params = [];
+    
+    // Table number search (partial match)
+    if (tableNumber && tableNumber.trim()) {
+      whereClause += " AND t.table_number LIKE ?";
+      params.push(`%${tableNumber.trim().toUpperCase()}%`);
+    }
+    
+    // Order code search (partial match)
+    if (orderCode && orderCode.trim()) {
+      whereClause += " AND o.unique_code LIKE ?";
+      params.push(`%${orderCode.trim().toUpperCase()}%`);
+    }
+    
+    // Status filter
+    if (status && status.trim()) {
+      whereClause += " AND o.status = ?";
+      params.push(status.trim());
+    }
+    
+    // Date range filter
+    if (startDate && endDate) {
+      whereClause += " AND DATE(o.created_at) BETWEEN ? AND ?";
+      params.push(startDate, endDate);
+    } else if (startDate) {
+      whereClause += " AND DATE(o.created_at) >= ?";
+      params.push(startDate);
+    } else if (endDate) {
+      whereClause += " AND DATE(o.created_at) <= ?";
+      params.push(endDate);
+    }
+    
+    // Mobile number search - more complex query to find orders associated with mobile numbers
+    let mobileJoin = "";
+    if (mobileNumber && mobileNumber.trim()) {
+      mobileJoin = `
+        INNER JOIN (
+          SELECT DISTINCT u.mobile_number, o2.id as order_id
+          FROM users u
+          CROSS JOIN orders o2
+          WHERE u.mobile_number LIKE ?
+          AND ABS(strftime('%s', u.created_at) - strftime('%s', o2.created_at)) <= 3600
+        ) mobile_match ON o.id = mobile_match.order_id
+      `;
+      params.push(`%${mobileNumber.trim()}%`);
+    }
+    
+    // Get total count for pagination
+    const countStmt = db.prepare(`
+      SELECT COUNT(DISTINCT o.id) as total
+      FROM orders o
+      LEFT JOIN tables t ON o.table_id = t.id
+      ${mobileJoin}
+      ${whereClause}
+    `);
+    
+    const totalResult = countStmt.get(...params);
+    const total = totalResult.total;
+    
+    // Get orders with pagination
+    const ordersStmt = db.prepare(`
+      SELECT DISTINCT
+        o.id,
+        o.unique_code,
+        o.status,
+        o.created_at,
+        t.table_number,
+        t.id as table_id
+      FROM orders o
+      LEFT JOIN tables t ON o.table_id = t.id
+      ${mobileJoin}
+      ${whereClause}
+      ORDER BY o.created_at DESC
+      LIMIT ? OFFSET ?
+    `);
+    
+    const orders = ordersStmt.all(...params, parseInt(limit), parseInt(offset));
+    
+    // Get items and mobile numbers for each order
+    const processedOrders = orders.map(order => {
+      // Get order items
+      const itemsStmt = db.prepare(`
+        SELECT oi.quantity, m.name, m.price, m.category
+        FROM order_items oi
+        LEFT JOIN menu m ON oi.menu_id = m.id
+        WHERE oi.order_id = ?
+      `);
+      const orderItems = itemsStmt.all(order.id);
+      
+      // Get associated mobile numbers (users created around the same time)
+      const mobileStmt = db.prepare(`
+        SELECT DISTINCT u.mobile_number
+        FROM users u
+        WHERE ABS(strftime('%s', u.created_at) - strftime('%s', ?)) <= 3600
+        ORDER BY u.created_at
+      `);
+      const mobileNumbers = mobileStmt.all(order.created_at);
+      
+      const total = orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+      const itemCount = orderItems.reduce((sum, item) => sum + item.quantity, 0);
+      
+      return {
+        ...order,
+        order_items: orderItems,
+        mobile_numbers: mobileNumbers.map(m => m.mobile_number),
+        total: total,
+        item_count: itemCount,
+        formatted_date: new Date(order.created_at).toLocaleString(),
+        time_ago: getTimeAgo(order.created_at)
+      };
+    });
+    
+    res.json({
+      orders: processedOrders,
+      pagination: {
+        total: total,
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+        pages: Math.ceil(total / parseInt(limit)),
+        current_page: Math.floor(parseInt(offset) / parseInt(limit)) + 1
+      },
+      search_params: {
+        tableNumber,
+        mobileNumber,
+        orderCode,
+        status,
+        startDate,
+        endDate
+      }
+    });
+  } catch (error) {
+    console.error('Error searching orders:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Helper function to calculate time ago
+function getTimeAgo(dateString) {
+  const now = new Date();
+  const orderDate = new Date(dateString);
+  const diffMs = now - orderDate;
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffMinutes = Math.floor(diffMs / (1000 * 60));
+  
+  if (diffDays > 0) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+  if (diffHours > 0) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+  if (diffMinutes > 0) return `${diffMinutes} minute${diffMinutes > 1 ? 's' : ''} ago`;
+  return 'Just now';
+}
+
 // Initialize sample data endpoint (for testing)
 app.post('/api/initialize-sample-data', (req, res) => {
   try {
