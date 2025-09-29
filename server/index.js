@@ -321,10 +321,34 @@ app.get('/api/tables', (req, res) => {
 app.post('/api/tables', (req, res) => {
   try {
     const { table_number, floor, seating_capacity } = req.body;
+    
+    // First, add the columns if they don't exist (for backward compatibility)
+    try {
+      db.exec(`
+        ALTER TABLE tables ADD COLUMN floor TEXT DEFAULT 'Ground Floor';
+      `);
+    } catch (e) {
+      // Column already exists, ignore error
+    }
+    
+    try {
+      db.exec(`
+        ALTER TABLE tables ADD COLUMN seating_capacity INTEGER DEFAULT 4;
+      `);
+    } catch (e) {
+      // Column already exists, ignore error
+    }
+    
     const stmt = db.prepare('INSERT INTO tables (table_number, floor, seating_capacity) VALUES (?, ?, ?)');
-    stmt.run(table_number, floor || 'Ground Floor', seating_capacity || 4);
+    const result = stmt.run(table_number, floor || 'Ground Floor', seating_capacity || 4);
+    
+    // Get the created table
+    const getTableStmt = db.prepare('SELECT * FROM tables WHERE rowid = ?');
+    const newTable = getTableStmt.get(result.lastInsertRowid);
+    
     res.json({ success: true });
   } catch (error) {
+    console.error('Error adding table:', error);
     res.status(500).json({ error: error.message });
   }
 });
