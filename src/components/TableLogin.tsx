@@ -159,11 +159,6 @@ export const TableLogin: React.FC<TableLoginProps> = ({ onLogin, loading }) => {
                     {phoneError}
                   </p>
                 )}
-                {mobileNumber && mobileNumber.length < 10 && !phoneError && (
-                  <p className="mt-2 text-sm text-gray-500">
-                    {mobileNumber.length}/10 digits entered
-                  </p>
-                )}
               </div>
             </>
           )}
