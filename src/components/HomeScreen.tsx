@@ -24,7 +24,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onModeSelect }) => {
       textColor: 'text-white'
     },
     {
-      id: 'admin-login',
+      id: 'kitchen-dashboard',
       title: 'Kitchen Dashboard',
       description: 'Real-time order management for kitchen staff (Admin Only)',
       icon: <Utensils className="w-8 h-8" />,
@@ -32,7 +32,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onModeSelect }) => {
       textColor: 'text-white'
     },
     {
-      id: 'admin-login',
+      id: 'qr-generator',
       title: 'QR Code Generator',
       description: 'Generate QR codes for restaurant tables (Admin Only)',
       icon: <QrCode className="w-8 h-8" />,
@@ -40,11 +40,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onModeSelect }) => {
       textColor: 'text-white'
     },
     {
-      id: 'admin-login',
+      id: 'admin-panel',
       title: 'Admin Panel',
       description: 'Manage tables and menu items (Admin Only)',
       icon: <Settings className="w-8 h-8" />,
-      color: 'bg-indigo-500 hover:bg-indigo-600',
+      color: 'bg-slate-500 hover:bg-slate-600',
       textColor: 'text-white'
     }
   ];
@@ -75,7 +75,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onModeSelect }) => {
             <button
               key={item.id}
               onClick={() => {
-                if (item.id === 'admin-login') {
+                if (item.id === 'kitchen-dashboard' || item.id === 'qr-generator' || item.id === 'admin-panel') {
                   onModeSelect('admin-login');
                 } else {
                   onModeSelect(item.id as any);
