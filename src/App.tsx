@@ -171,6 +171,22 @@ function App() {
     setLoading(true);
     try {
       const result = await apiService.initializeOrder(tableNumber, mobileNumber);
+
+      if (result.isNewOrder === false && result.order.tables?.locked) {
+        setLoading(false);
+        const joinTable = confirm(
+          `Table ${tableNumber} is already occupied.\n\n` +
+          `To join this table, you need the 6-digit code shared by your tablemate.\n\n` +
+          `Click OK to enter the code, or Cancel to choose a different table.`
+        );
+
+        if (joinTable) {
+          setCustomerState('code-entry');
+          window.history.pushState({}, '', '/customer?join=true');
+        }
+        return;
+      }
+
       setCurrentOrder(result.order);
       setUniqueCode(result.uniqueCode);
       setCustomerState('menu');

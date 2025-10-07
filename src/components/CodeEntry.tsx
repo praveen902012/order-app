@@ -25,11 +25,21 @@ export const CodeEntry: React.FC<CodeEntryProps> = ({ onSubmit, onBack, loading 
             <Users className="w-10 h-10 text-blue-600" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Join Order
+            Join Table Order
           </h1>
-          <p className="text-gray-600">
-            Enter the 6-digit code shared by your tablemate
+          <p className="text-gray-600 mb-4">
+            Enter the 6-digit code shared by your tablemate to join their order
           </p>
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left">
+            <p className="text-sm text-blue-800">
+              <strong>💡 How to find the code:</strong>
+            </p>
+            <ul className="text-sm text-blue-700 mt-2 space-y-1 list-disc list-inside">
+              <li>Ask your tablemate to check their menu screen</li>
+              <li>The code is displayed at the top of their order page</li>
+              <li>It's a 6-character code (letters and numbers)</li>
+            </ul>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
