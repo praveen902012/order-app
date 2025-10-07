@@ -2,7 +2,7 @@ import QRCode from 'qrcode';
 
 export const generateQRCode = async (tableNumber: string): Promise<string> => {
   try {
-    const qrData = `${window.location.origin}?table=${tableNumber}`;
+    const qrData = `${window.location.origin}/customer?table=${tableNumber}`;
     const qrCodeDataURL = await QRCode.toDataURL(qrData, {
       width: 256,
       margin: 2,

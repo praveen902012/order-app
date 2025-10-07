@@ -32,50 +32,86 @@ function App() {
   };
 
   useEffect(() => {
-    // Check URL parameters for initial routing
+    // Check URL path for initial routing
+    const path = window.location.pathname;
     const params = new URLSearchParams(window.location.search);
-    const kitchen = params.get('kitchen');
-    const qrgen = params.get('qr');
     const tableParam = params.get('table');
 
-    if (kitchen === 'true') {
+    if (path === '/kitchen') {
       setMode('kitchen');
-    } else if (qrgen === 'true') {
+    } else if (path === '/qr-generator') {
       setMode('qr-generator');
+    } else if (path === '/admin') {
+      setMode('admin');
+    } else if (path === '/tables') {
+      setMode('tables');
+    } else if (path === '/menu-management') {
+      setMode('menu');
+    } else if (path === '/customer') {
+      setMode('customer');
+      setCustomerState('login');
     } else if (tableParam) {
       // Auto-fill table number if coming from QR code
       setMode('customer');
       setCustomerState('login');
     }
+
+    // Listen for browser back/forward navigation
+    const handlePopState = () => {
+      const currentPath = window.location.pathname;
+      if (currentPath === '/') {
+        setMode('home');
+      } else if (currentPath === '/kitchen') {
+        setMode('kitchen');
+      } else if (currentPath === '/qr-generator') {
+        setMode('qr-generator');
+      } else if (currentPath === '/admin') {
+        setMode('admin');
+      } else if (currentPath === '/tables') {
+        setMode('tables');
+      } else if (currentPath === '/menu-management') {
+        setMode('menu');
+      } else if (currentPath === '/customer') {
+        setMode('customer');
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
   const handleModeSelect = (selectedMode: 'customer' | 'kitchen' | 'qr-generator' | 'join-order' | 'admin-login') => {
     if (selectedMode === 'join-order') {
       setMode('customer');
       setCustomerState('code-entry');
+      window.history.pushState({}, '', '/customer?join=true');
     } else if (selectedMode === 'admin-login') {
       // Determine which admin mode was requested based on URL or default to admin panel
-      const params = new URLSearchParams(window.location.search);
-      const kitchen = params.get('kitchen');
-      const qrgen = params.get('qr');
-      
-      if (kitchen === 'true') {
+      const path = window.location.pathname;
+
+      if (path === '/kitchen') {
         setPendingAdminMode('kitchen');
-      } else if (qrgen === 'true') {
+      } else if (path === '/qr-generator') {
         setPendingAdminMode('qr-generator');
       } else {
         setPendingAdminMode('admin');
       }
-      
+
       if (isAdminAuthenticated) {
         setMode(pendingAdminMode || 'admin');
       } else {
         setMode('admin-login');
+        window.history.pushState({}, '', '/admin-login');
       }
     } else {
       setMode(selectedMode);
       if (selectedMode === 'customer') {
         setCustomerState('login');
+        window.history.pushState({}, '', '/customer');
+      } else if (selectedMode === 'kitchen') {
+        window.history.pushState({}, '', '/kitchen');
+      } else if (selectedMode === 'qr-generator') {
+        window.history.pushState({}, '', '/qr-generator');
       }
     }
   };
@@ -83,18 +119,26 @@ function App() {
   const handleAdminLogin = async (username: string, password: string) => {
     setLoading(true);
     setAdminLoginError('');
-    
+
     // Simulate API call delay
     await new Promise(resolve => setTimeout(resolve, 1000));
-    
+
     if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
       setIsAdminAuthenticated(true);
-      setMode(pendingAdminMode || 'admin');
+      const targetMode = pendingAdminMode || 'admin';
+      setMode(targetMode);
       setPendingAdminMode(null);
+
+      const pathMap = {
+        'kitchen': '/kitchen',
+        'qr-generator': '/qr-generator',
+        'admin': '/admin'
+      };
+      window.history.pushState({}, '', pathMap[targetMode as keyof typeof pathMap] || '/admin');
     } else {
       setAdminLoginError('Invalid username or password');
     }
-    
+
     setLoading(false);
   };
 
@@ -103,14 +147,24 @@ function App() {
     setMode('home');
     setPendingAdminMode(null);
     setAdminLoginError('');
+    window.history.pushState({}, '', '/');
   };
 
   const handleAdminNavigate = (page: 'kitchen' | 'qr-generator' | 'admin' | 'tables' | 'menu') => {
     setMode(page);
+    const pathMap = {
+      'kitchen': '/kitchen',
+      'qr-generator': '/qr-generator',
+      'admin': '/admin',
+      'tables': '/tables',
+      'menu': '/menu-management'
+    };
+    window.history.pushState({}, '', pathMap[page]);
   };
 
   const handleAdminHome = () => {
     setMode('home');
+    window.history.pushState({}, '', '/');
   };
 
   const handleTableLogin = async (tableNumber: string, mobileNumber: string) => {
@@ -120,6 +174,7 @@ function App() {
       setCurrentOrder(result.order);
       setUniqueCode(result.uniqueCode);
       setCustomerState('menu');
+      window.history.pushState({}, '', `/customer?table=${tableNumber}`);
     } catch (error) {
       console.error('Login failed:', error);
       alert('Failed to connect to table. Please check the table number and try again.');
@@ -136,6 +191,7 @@ function App() {
         setCurrentOrder(order);
         setUniqueCode(code);
         setCustomerState('menu');
+        window.history.pushState({}, '', `/customer?code=${code}`);
       } else {
         alert('Invalid order code. Please check and try again.');
       }
@@ -158,14 +214,17 @@ function App() {
       <div>
         <div className="fixed top-4 right-4 z-50">
           <button
-            onClick={() => setMode('home')}
+            onClick={() => {
+              setMode('home');
+              window.history.pushState({}, '', '/');
+            }}
             className="bg-white border rounded-lg px-3 py-2 text-sm shadow hover:bg-gray-50 transition-colors"
           >
             ← Home
           </button>
         </div>
-        <AdminLogin 
-          onLogin={handleAdminLogin} 
+        <AdminLogin
+          onLogin={handleAdminLogin}
           loading={loading}
           error={adminLoginError}
         />
@@ -196,7 +255,10 @@ function App() {
       <div>
         <div className="fixed top-4 right-4 z-50">
           <button
-            onClick={() => setMode('home')}
+            onClick={() => {
+              setMode('home');
+              window.history.pushState({}, '', '/');
+            }}
             className="bg-white border rounded-lg px-3 py-2 text-sm shadow hover:bg-gray-50 transition-colors"
           >
             ← Home
@@ -204,7 +266,10 @@ function App() {
         </div>
         <CodeEntry
           onSubmit={handleCodeEntry}
-          onBack={() => setCustomerState('login')}
+          onBack={() => {
+            setCustomerState('login');
+            window.history.pushState({}, '', '/customer');
+          }}
           loading={loading}
         />
       </div>
@@ -221,6 +286,7 @@ function App() {
               setCurrentOrder(null);
               setUniqueCode('');
               setCustomerState('login');
+              window.history.pushState({}, '', '/');
             }}
             className="bg-white border rounded-lg px-3 py-2 text-sm shadow hover:bg-gray-50 transition-colors"
           >
