@@ -1,5 +1,5 @@
 import React from 'react';
-import { Utensils, QrCode, Settings, LogOut, Hop as Home, Menu } from 'lucide-react';
+import { Utensils, QrCode, Settings, LogOut, Hop as Home, Menu, armchair, Table2Icon } from 'lucide-react';
 
 interface AdminNavigationProps {
   currentPage: 'kitchen' | 'qr-generator' | 'admin' | 'tables' | 'menu';
@@ -29,14 +29,14 @@ export const AdminNavigation: React.FC<AdminNavigationProps> = ({
     },
     {
       id: 'menu' as const,
-      title: 'Menu Management',
+      title: 'Menu',
       icon: <Menu className="w-5 h-5" />,
       description: 'Manage menu items'
     },
     {
       id: 'tables' as const,
       title: 'Tables',
-      icon: <Settings className="w-5 h-5" />,
+      icon: <Table2Icon className="w-5 h-5" />,
       description: 'Manage restaurant tables'
     },
     {
