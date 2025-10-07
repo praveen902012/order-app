@@ -13,12 +13,34 @@ export const TableLogin: React.FC<TableLoginProps> = ({ onLogin, loading }) => {
   const [mobileNumber, setMobileNumber] = useState('');
   const [step, setStep] = useState<'table' | 'phone'>('table');
   const [fromQR, setFromQR] = useState(false);
+  const [phoneError, setPhoneError] = useState('');
+
+  const validatePhoneNumber = (phone: string): boolean => {
+    // Remove any non-digit characters
+    const cleanPhone = phone.replace(/\D/g, '');
+    return cleanPhone.length === 10;
+  };
+
+  const handlePhoneChange = (value: string) => {
+    // Only allow digits and limit to 10 characters
+    const cleanValue = value.replace(/\D/g, '').slice(0, 10);
+    setMobileNumber(cleanValue);
+    
+    // Clear error when user starts typing
+    if (phoneError) {
+      setPhoneError('');
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (step === 'table' && tableNumber.trim()) {
       setStep('phone');
     } else if (step === 'phone' && mobileNumber.trim()) {
+      if (!validatePhoneNumber(mobileNumber)) {
+        setPhoneError('Mobile number must be exactly 10 digits');
+        return;
+      }
       onLogin(tableNumber.trim().toUpperCase(), mobileNumber.trim());
     }
   };
@@ -41,6 +63,7 @@ export const TableLogin: React.FC<TableLoginProps> = ({ onLogin, loading }) => {
   const handleBackToTable = () => {
     setStep('table');
     setMobileNumber('');
+    setPhoneError('');
     if (fromQR) {
       setTableNumber('');
       setFromQR(false);
@@ -116,17 +139,31 @@ export const TableLogin: React.FC<TableLoginProps> = ({ onLogin, loading }) => {
               <div>
                 <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
                   <Phone className="w-4 h-4 mr-2" />
-                  Mobile Number
+                  Mobile Number (10 digits)
                 </label>
                 <input
                   type="tel"
                   value={mobileNumber}
-                  onChange={(e) => setMobileNumber(e.target.value)}
-                  placeholder="Enter your mobile number"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+                  onChange={(e) => handlePhoneChange(e.target.value)}
+                  placeholder="Enter 10-digit mobile number"
+                  maxLength={10}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors ${
+                    phoneError ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                  }`}
                   required
                   autoFocus
                 />
+                {phoneError && (
+                  <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                    <span className="w-4 h-4 text-red-500">⚠️</span>
+                    {phoneError}
+                  </p>
+                )}
+                {mobileNumber && mobileNumber.length < 10 && !phoneError && (
+                  <p className="mt-2 text-sm text-gray-500">
+                    {mobileNumber.length}/10 digits entered
+                  </p>
+                )}
               </div>
             </>
           )}
@@ -144,7 +181,7 @@ export const TableLogin: React.FC<TableLoginProps> = ({ onLogin, loading }) => {
             )}
             <button
               type="submit"
-              disabled={loading || (step === 'table' && !tableNumber.trim()) || (step === 'phone' && !mobileNumber.trim())}
+              disabled={loading || (step === 'table' && !tableNumber.trim()) || (step === 'phone' && (!mobileNumber.trim() || mobileNumber.length !== 10))}
               className="flex-1 bg-orange-500 text-white py-3 rounded-lg font-medium hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
             >
               {loading ? 'Connecting...' : step === 'table' ? 'Continue' : 'Start Ordering'}
