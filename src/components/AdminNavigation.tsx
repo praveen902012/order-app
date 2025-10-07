@@ -1,5 +1,5 @@
 import React from 'react';
-import { Utensils, QrCode, Settings, LogOut, Hop as Home, Menu, armchair, Table2Icon } from 'lucide-react';
+import { Utensils, QrCode, Settings, LogOut, Hop as Home, Menu, Armchair as armchair, Table2 as Table2Icon } from 'lucide-react';
 
 interface AdminNavigationProps {
   currentPage: 'kitchen' | 'qr-generator' | 'admin' | 'tables' | 'menu';
