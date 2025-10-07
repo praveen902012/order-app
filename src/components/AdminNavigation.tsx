@@ -1,9 +1,9 @@
 import React from 'react';
-import { Utensils, QrCode, Settings, LogOut, Hop as Home, Menu, Armchair as armchair, Table2 as Table2Icon } from 'lucide-react';
+import { Utensils, QrCode, Settings, LogOut, Hop as Home, Menu, Armchair as armchair, Table2 as Table2Icon, FlaskConical } from 'lucide-react';
 
 interface AdminNavigationProps {
-  currentPage: 'kitchen' | 'qr-generator' | 'admin' | 'tables' | 'menu';
-  onNavigate: (page: 'kitchen' | 'qr-generator' | 'admin' | 'tables' | 'menu') => void;
+  currentPage: 'kitchen' | 'qr-generator' | 'admin' | 'tables' | 'menu' | 'api-test';
+  onNavigate: (page: 'kitchen' | 'qr-generator' | 'admin' | 'tables' | 'menu' | 'api-test') => void;
   onLogout: () => void;
   onHome: () => void;
 }
@@ -44,6 +44,12 @@ export const AdminNavigation: React.FC<AdminNavigationProps> = ({
       title: 'Admin Panel',
       icon: <Settings className="w-5 h-5" />,
       description: 'System administration'
+    },
+    {
+      id: 'api-test' as const,
+      title: 'API Test',
+      icon: <FlaskConical className="w-5 h-5" />,
+      description: 'Test API endpoints'
     }
   ];
 

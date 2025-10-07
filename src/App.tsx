@@ -9,10 +9,11 @@ import { KitchenDashboard } from './components/KitchenDashboard';
 import { QRGenerator } from './components/QRGenerator';
 import { AdminPanel } from './components/AdminPanel';
 import { TableManagement } from './components/TableManagement';
+import { ApiTestPage } from './components/ApiTestPage';
 import { Order } from './types/database';
 import { apiService } from './services/api';
 
-type AppMode = 'home' | 'customer' | 'kitchen' | 'qr-generator' | 'admin' | 'tables' | 'menu' | 'admin-login';
+type AppMode = 'home' | 'customer' | 'kitchen' | 'qr-generator' | 'admin' | 'tables' | 'menu' | 'admin-login' | 'api-test';
 type CustomerState = 'login' | 'code-entry' | 'menu';
 
 function App() {
@@ -47,6 +48,8 @@ function App() {
       setMode('tables');
     } else if (path === '/menu-management') {
       setMode('menu');
+    } else if (path === '/api-test') {
+      setMode('api-test');
     } else if (path === '/customer') {
       setMode('customer');
       setCustomerState('login');
@@ -71,6 +74,8 @@ function App() {
         setMode('tables');
       } else if (currentPath === '/menu-management') {
         setMode('menu');
+      } else if (currentPath === '/api-test') {
+        setMode('api-test');
       } else if (currentPath === '/customer') {
         setMode('customer');
       }
@@ -150,14 +155,15 @@ function App() {
     window.history.pushState({}, '', '/');
   };
 
-  const handleAdminNavigate = (page: 'kitchen' | 'qr-generator' | 'admin' | 'tables' | 'menu') => {
+  const handleAdminNavigate = (page: 'kitchen' | 'qr-generator' | 'admin' | 'tables' | 'menu' | 'api-test') => {
     setMode(page);
     const pathMap = {
       'kitchen': '/kitchen',
       'qr-generator': '/qr-generator',
       'admin': '/admin',
       'tables': '/tables',
-      'menu': '/menu-management'
+      'menu': '/menu-management',
+      'api-test': '/api-test'
     };
     window.history.pushState({}, '', pathMap[page]);
   };
@@ -380,6 +386,20 @@ function App() {
           onHome={handleAdminHome}
         />
         <TableManagement />
+      </div>
+    );
+  }
+
+  if (mode === 'api-test') {
+    return (
+      <div>
+        <AdminNavigation
+          currentPage="api-test"
+          onNavigate={handleAdminNavigate}
+          onLogout={handleAdminLogout}
+          onHome={handleAdminHome}
+        />
+        <ApiTestPage />
       </div>
     );
   }
