@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircle, XCircle, Loader, Copy, Trash2, Play } from 'lucide-react';
+import { CircleCheck as CheckCircle, Circle as XCircle, Loader, Copy, Trash2, Play } from 'lucide-react';
 import { apiService } from '../services/api';
 
 interface TestResult {
